@@ -1,10 +1,10 @@
 package lavaplayer.source.soundcloud
 
 import lavaplayer.tools.DataFormatTools
-import lavaplayer.tools.DataFormatTools.TextRange
 import lavaplayer.tools.ExceptionTools
 import lavaplayer.tools.FriendlyException
 import lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
+import lavaplayer.tools.TextRange
 import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.io.HttpClientTools
 import lavaplayer.tools.io.HttpInterface
@@ -19,9 +19,9 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
     companion object {
         private val log = KotlinLogging.logger { }
         private val JSON_RANGES: List<TextRange> = listOf(
-            TextRange("window.__sc_hydration =", ";</script>"),
-            TextRange("catch(e){}})},", ");</script>"),
-            TextRange("){}})},", ");</script>"),
+            "window.__sc_hydration =" to ";</script>",
+            "catch(e){}})}," to ");</script>",
+            "){}})}," to ");</script>",
         )
     }
 
