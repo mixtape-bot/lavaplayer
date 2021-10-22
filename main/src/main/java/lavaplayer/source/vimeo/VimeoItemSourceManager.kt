@@ -11,13 +11,12 @@ import lavaplayer.track.AudioReference
 import lavaplayer.track.AudioTrack
 import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.loader.LoaderState
-import org.apache.commons.io.IOUtils
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
@@ -92,7 +91,8 @@ class VimeoItemSourceManager : ItemSourceManager, HttpConfigurable {
                 throw FriendlyException("Server responded with an error.", FriendlyException.Severity.SUSPICIOUS, IllegalStateException("Response code is $statusCode"))
             }
 
-            return loadTrackFromPageContent(trackUrl, IOUtils.toString(response.entity.content, StandardCharsets.UTF_8))
+            val pageContent = EntityUtils.toString(response.entity, Charsets.UTF_8)
+            return loadTrackFromPageContent(trackUrl, pageContent)
         }
     }
 

@@ -11,8 +11,8 @@ import lavaplayer.track.AudioTrackInfo
 import lavaplayer.track.DelegatedAudioTrack
 import lavaplayer.track.playback.LocalAudioTrackExecutor
 import mu.KotlinLogging
-import org.apache.commons.io.IOUtils
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.util.EntityUtils
 import java.io.IOException
 import java.net.URI
 
@@ -61,7 +61,7 @@ class VimeoAudioTrack(
                 throw FriendlyException("Server responded with an error.", FriendlyException.Severity.SUSPICIOUS, IllegalStateException("Response code for player config is $statusCode"))
             }
 
-            val pageContent = IOUtils.toString(response.entity.content, Charsets.UTF_8)
+            val pageContent = EntityUtils.toString(response.entity, Charsets.UTF_8)
             return sourceManager.loadConfigJsonFromPageContent(pageContent)
         }
     }
@@ -77,8 +77,7 @@ class VimeoAudioTrack(
                 )
             }
 
-            val player = IOUtils.toString(response.entity.content, Charsets.UTF_8)
-            return player.decodeJson()
+            return response.entity.content.decodeJson()
         }
     }
 }

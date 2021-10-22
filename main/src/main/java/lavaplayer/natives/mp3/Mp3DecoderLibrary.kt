@@ -1,23 +1,23 @@
-package lavaplayer.natives.mp3;
+package lavaplayer.natives.mp3
 
-import lavaplayer.natives.ConnectorNativeLibLoader;
+import java.nio.ShortBuffer
+import lavaplayer.natives.mp3.Mp3DecoderLibrary
+import lavaplayer.natives.ConnectorNativeLibLoader
+import java.nio.ByteBuffer
 
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+internal class Mp3DecoderLibrary private constructor() {
+    external fun create(): Long
 
-class Mp3DecoderLibrary {
-    private Mp3DecoderLibrary() {
+    external fun destroy(instance: Long)
 
+    external fun decode(instance: Long, directInput: ByteBuffer?, inputLength: Int, directOutput: ShortBuffer?, outputLengthInBytes: Int): Int
+
+    companion object {
+        @kotlin.jvm.JvmStatic
+        val instance: Mp3DecoderLibrary
+            get() {
+                ConnectorNativeLibLoader.loadConnectorLibrary()
+                return Mp3DecoderLibrary()
+            }
     }
-
-    static Mp3DecoderLibrary getInstance() {
-        ConnectorNativeLibLoader.loadConnectorLibrary();
-        return new Mp3DecoderLibrary();
-    }
-
-    native long create();
-
-    native void destroy(long instance);
-
-    native int decode(long instance, ByteBuffer directInput, int inputLength, ShortBuffer directOutput, int outputLengthInBytes);
 }

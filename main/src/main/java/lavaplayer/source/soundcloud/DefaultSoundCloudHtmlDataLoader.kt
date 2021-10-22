@@ -13,7 +13,6 @@ import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 
 class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
     companion object {
@@ -35,7 +34,7 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
 
             HttpClientTools.assertSuccessWithContent(response, "video page response")
 
-            val html = EntityUtils.toString(response.entity, StandardCharsets.UTF_8)
+            val html = EntityUtils.toString(response.entity, Charsets.UTF_8)
             val rootData = DataFormatTools.extractBetween(html, JSON_RANGES)
                 ?: throw FriendlyException(
                     "This url does not appear to be a playable track.", SUSPICIOUS,

@@ -1,10 +1,7 @@
 package lavaplayer.source.youtube
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import lavaplayer.tools.DataFormatTools.durationTextToMillis
 import lavaplayer.tools.ExceptionTools
-import lavaplayer.tools.ThumbnailTools
 import lavaplayer.tools.extensions.decodeJson
 import lavaplayer.tools.http.ExtendedHttpConfigurable
 import lavaplayer.tools.io.HttpClientTools
@@ -43,8 +40,7 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
 
                 httpInterface.execute(post).use { response ->
                     HttpClientTools.assertSuccessWithContent(response, "search response")
-                    val responseText = EntityUtils.toString(response.entity, StandardCharsets.UTF_8)
-                    val searchResults = responseText.decodeJson<YouTubeSearchResult>()
+                    val searchResults = response.entity.content.decodeJson<SearchResult>()
                     return extractSearchResults(searchResults, query, trackFactory)
                 }
             }
@@ -54,114 +50,66 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
     }
 
     private fun extractSearchResults(
-        searchResults: YouTubeSearchResult,
+        searchResults: SearchResult,
         query: String,
         trackFactory: AudioTrackFactory
     ): AudioItem {
         log.debug { "Attempting to parse results from search page" }
 
-        val tracks: MutableList<AudioTrack> = searchResults
-            .runCatching { extractSearchPage(this, trackFactory) }
-            .onFailure { throw RuntimeException(it) }
-            .getOrThrow()
+        val tracks: MutableList<AudioTrack> = extractSearchPage(searchResults, trackFactory)
+            .ifEmpty { return AudioReference.NO_TRACK }
 
-        return if (tracks.isEmpty()) {
-            AudioReference.NO_TRACK
-        } else {
-            BasicAudioTrackCollection(
-                "Search results for: $query",
-                AudioTrackCollectionType.SearchResult(query),
-                tracks,
-                null
-            )
-        }
+        return BasicAudioTrackCollection(
+            "Search results for: $query",
+            AudioTrackCollectionType.SearchResult(query),
+            tracks,
+            null
+        )
     }
 
     @Throws(IOException::class)
-    private fun extractSearchPage(
-        searchResults: YouTubeSearchResult,
-        trackFactory: AudioTrackFactory
-    ): MutableList<AudioTrack> {
-        return searchResults.contents.sectionListRenderer.contents.first().itemSectionRenderer.videos
+    private fun extractSearchPage(searchResults: SearchResult, trackFactory: AudioTrackFactory): MutableList<AudioTrack> {
+        return searchResults.contents.sectionListRenderer.contents.first().itemSectionRenderer.contents
             .mapNotNull { extractPolymerData(it, trackFactory) }
             .toMutableList()
     }
 
-    private fun extractPolymerData(listedTrack: SectionListTrack, trackFactory: AudioTrackFactory): AudioTrack? {
-        val track = listedTrack.data
+    private fun extractPolymerData(listedTrack: SectionList.Track, trackFactory: AudioTrackFactory): AudioTrack? {
+        val video = listedTrack.compactVideoRenderer
             ?: return null // Ignore everything which is not a track
 
         /* Ignore if the video is a live stream */
-        val length = track.length
+        val length = video.length
             ?: return null
 
         /* create the audio track. */
         val info = AudioTrackInfo(
-            title = track.title,
-            author = track.author,
+            title = video.title,
+            author = video.author!!,
             length = length,
-            identifier = track.id,
-            uri = "${YoutubeConstants.WATCH_URL_PREFIX}${track.id}",
-            artworkUrl = track.thumbnail
+            identifier = video.id,
+            uri = "${YoutubeConstants.WATCH_URL_PREFIX}${video.id}",
+            artworkUrl = video.thumbnail
         )
 
         return trackFactory.create(info)
     }
 
     @Serializable
-    data class YouTubeSearchResult(val contents: YouTubeSearchResultContents)
-
-    @Serializable
-    data class YouTubeSearchResultContents(val sectionListRenderer: SectionList)
-
-    @Serializable
-    data class SectionList(val contents: List<SectionListItem>)
-
-    @Serializable
-    data class SectionListItem(val itemSectionRenderer: SectionListItemRenderer)
-
-    @Serializable
-    data class SectionListItemRenderer(@SerialName("contents") val videos: List<SectionListTrack>)
-
-    @Serializable
-    data class SectionListTrack(@SerialName("compactVideoRenderer") val data: Video? = null)
-
-    @Serializable
-    data class Video(
-        @SerialName("videoId")
-        val id: String,
-        @SerialName("title")
-        private val titleRuns: Runs,
-        @SerialName("longBylineText")
-        private val authorRuns: Runs,
-        @SerialName("lengthText")
-        private val lengthRuns: Runs?,
-        @SerialName("thumbnail")
-        private val _thumbnail: Thumbnails
-    ) {
-        val title: String
-            get() = titleRuns.runs.first().text
-
-        val author: String
-            get() = authorRuns.runs.first().text
-
-        val length: Long?
-            get() = lengthRuns?.runs?.firstOrNull()?.text?.let { durationTextToMillis(it) }
-
-        val thumbnail: String
-            get() = _thumbnail.thumbnails.maxByOrNull { it.width + it.height }?.url
-                ?: ThumbnailTools.YOUTUBE_THUMBNAIL_FORMAT.format(id)
-
+    data class SearchResult(val contents: Contents) {
         @Serializable
-        data class Thumbnails(val thumbnails: List<TrackThumbnail>)
+        data class Contents(val sectionListRenderer: SectionList)
     }
 
     @Serializable
-    data class TrackThumbnail(val url: String, val width: Long, val height: Long)
-
-    @Serializable
-    data class Runs(val runs: List<Run>) {
+    data class SectionList(val contents: List<Item>) {
         @Serializable
-        data class Run(val text: String)
+        data class Item(val itemSectionRenderer: Renderer) {
+            @Serializable
+            data class Renderer(val contents: List<Track>)
+        }
+
+        @Serializable
+        data class Track(val compactVideoRenderer: YouTubeVideoModel? = null)
     }
 }
