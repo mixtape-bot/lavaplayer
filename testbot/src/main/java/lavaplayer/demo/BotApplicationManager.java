@@ -1,16 +1,15 @@
 package lavaplayer.demo;
 
-import lavaplayer.common.tools.DaemonThreadFactory;
+import com.sedmelluq.discord.lavaplayer.filter.ResamplingPcmAudioFilter;
+import com.sedmelluq.discord.lavaplayer.filter.ResamplingQuality;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.natives.samplerate.SampleRateConverter;
+import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
 import lavaplayer.demo.controller.BotCommandMappingHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerManager;
 import lavaplayer.demo.music.MusicController;
-import lavaplayer.filter.ResamplingPcmAudioFilter;
-import lavaplayer.manager.AudioConfiguration;
-import lavaplayer.manager.AudioPlayerManager;
-import lavaplayer.manager.DefaultAudioPlayerManager;
-import lavaplayer.natives.samplerate.SampleRateConverter;
-import lavaplayer.source.common.SourceRegistry;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -26,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.*;
+
 public class BotApplicationManager extends ListenerAdapter {
     private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
 
@@ -40,11 +41,11 @@ public class BotApplicationManager extends ListenerAdapter {
 
         controllerManager.registerController(new MusicController.Factory());
 
-        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(AudioConfiguration.ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
+        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
 
         playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setResamplingQuality(AudioConfiguration.ResamplingQuality.HIGH);
-        SourceRegistry.registerRemoteSources(playerManager);
+        playerManager.getConfiguration().setResamplingQuality(ResamplingQuality.HIGH);
+        registerRemoteSources(playerManager);
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
 
