@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.tools.extensions.notifyAll
 import com.sedmelluq.discord.lavaplayer.tools.extensions.wait
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -16,21 +16,47 @@ import java.util.concurrent.TimeoutException
  * @param format         The format of the frames held in this buffer
  * @param stopping       Atomic boolean which has true value when the track is in a state of pending stop.
  */
-class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, private val stopping: (() -> Boolean)?) :
-    AbstractAudioFrameBuffer(format) {
-    /**
-     * @return Total number of frames that the buffer can hold.
-     */
-    override val fullCapacity: Int
-    private val frames: Array<ReferenceMutableAudioFrame?>
-    private val silentFrame: ReferenceMutableAudioFrame
-    private val frameBuffer: ByteArray
+class NonAllocatingAudioFrameBuffer(
+    bufferDuration: Int,
+    format: AudioDataFormat,
+    private val stopping: (() -> Boolean)?
+) : AbstractAudioFrameBuffer(format) {
+    companion object {
+        private val log = KotlinLogging.logger { }
+
+        private fun createFrames(frameCount: Int, format: AudioDataFormat): Array<ReferenceMutableAudioFrame> {
+            return Array(frameCount) {
+                val frame = ReferenceMutableAudioFrame()
+                frame.format = format
+                frame
+            }
+        }
+
+        private fun createSilentFrame(format: AudioDataFormat): ReferenceMutableAudioFrame {
+            val frame = ReferenceMutableAudioFrame()
+            frame.format = format
+            frame.setDataReference(format.silenceBytes, 0, format.silenceBytes.size)
+            frame.volume = 0
+
+            return frame
+        }
+    }
+
+    private val maximumFrameCount = bufferDuration / format.frameDuration.toInt() + 1
+    private val frames: Array<ReferenceMutableAudioFrame> = createFrames(maximumFrameCount, format)
+    private val silentFrame: ReferenceMutableAudioFrame = createSilentFrame(format)
+    private val frameBuffer: ByteArray = ByteArray(format.expectedChunkSize * maximumFrameCount)
     private var bridgeFrame: MutableAudioFrame? = null
     private var firstFrame = 0
     private var frameCount = 0
 
     /**
-     * @return Number of frames that can be added to the buffer without blocking.
+     * Total number of frames that the buffer can hold.
+     */
+    override val fullCapacity: Int = frameBuffer.size / format.maximumChunkSize
+
+    /**
+     * Number of frames that can be added to the buffer without blocking.
      */
     override val remainingCapacity: Int
         get() {
@@ -38,10 +64,12 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
                 if (frameCount == 0) {
                     return fullCapacity
                 }
+
                 val lastFrame = wrappedFrameIndex(firstFrame + frameCount - 1)
-                val bufferHead = frames[firstFrame]!!.frameOffset
-                val bufferTail = frames[lastFrame]!!.frameEndOffset
+                val bufferHead = frames[firstFrame].frameOffset
+                val bufferTail = frames[lastFrame].frameEndOffset
                 val maximumFrameSize = format.maximumChunkSize
+
                 return if (bufferHead < bufferTail) {
                     (frameBuffer.size - bufferTail) / maximumFrameSize + bufferHead / maximumFrameSize
                 } else {
@@ -49,14 +77,6 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
                 }
             }
         }
-
-    init {
-        val maximumFrameCount = bufferDuration / format.frameDuration().toInt() + 1
-        frames = createFrames(maximumFrameCount, format)
-        silentFrame = createSilentFrame(format)
-        frameBuffer = ByteArray(format.expectedChunkSize * maximumFrameCount)
-        fullCapacity = frameBuffer.size / format.maximumChunkSize
-    }
 
     @Throws(InterruptedException::class)
     override fun consume(frame: AudioFrame) {
@@ -74,9 +94,11 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
                     clear()
                     clearOnInsert = false
                 }
+
                 while (!attemptStore(frame)) {
                     synchronizer.wait()
                 }
+
                 synchronizer.notifyAll()
             }
         }
@@ -84,18 +106,14 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
 
     override fun provide(): AudioFrame? {
         synchronized(synchronizer) {
-            return if (provide(getBridgeFrame())) {
-                unwrapBridgeFrame()
-            } else null
+            return if (provide(getBridgeFrame())) unwrapBridgeFrame() else null
         }
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
     override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
         synchronized(synchronizer) {
-            return if (provide(getBridgeFrame(), timeout, unit)) {
-                unwrapBridgeFrame()
-            } else null
+            return if (provide(getBridgeFrame(), timeout, unit)) unwrapBridgeFrame() else null
         }
     }
 
@@ -127,6 +145,7 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
                     synchronizer.notifyAll()
                     return true
                 }
+
                 synchronizer.wait(endTime - currentTime)
                 currentTime = System.nanoTime()
                 if (currentTime >= endTime) {
@@ -141,10 +160,11 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
 
     private fun popFrame(targetFrame: MutableAudioFrame) {
         var frame = frames[firstFrame]
-        if (frame!!.volume == 0) {
+        if (frame.volume == 0) {
             silentFrame.timecode = frame.timecode
             frame = silentFrame
         }
+
         targetFrame.timecode = frame.timecode
         targetFrame.volume = frame.volume
         targetFrame.isTerminator = false
@@ -171,9 +191,10 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
         get() {
             synchronized(synchronizer) {
                 if (!clearOnInsert && frameCount > 0) {
-                    return frames[wrappedFrameIndex(firstFrame + frameCount - 1)]!!.timecode
+                    return frames[wrappedFrameIndex(firstFrame + frameCount - 1)].timecode
                 }
             }
+
             return null
         }
 
@@ -181,17 +202,21 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
         if (frameCount >= frames.size) {
             return false
         }
+
         val frameLength = frame.dataLength
         val frameBufferLength = frameBuffer.size
         if (frameCount == 0) {
             firstFrame = 0
-            require(frameLength <= frameBufferLength) { "Frame is too big for buffer." }
+            require(frameLength <= frameBufferLength) {
+                "Frame is too big for buffer."
+            }
+
             store(frame, 0, 0, frameLength)
         } else {
             val lastFrame = wrappedFrameIndex(firstFrame + frameCount - 1)
             val nextFrame = wrappedFrameIndex(lastFrame + 1)
-            val bufferHead = frames[firstFrame]!!.frameOffset
-            val bufferTail = frames[lastFrame]!!.frameEndOffset
+            val bufferHead = frames[firstFrame].frameOffset
+            val bufferTail = frames[lastFrame].frameEndOffset
             if (bufferHead < bufferTail) {
                 if (bufferTail + frameLength <= frameBufferLength) {
                     store(frame, nextFrame, bufferTail, frameLength)
@@ -216,7 +241,7 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
 
     private fun store(frame: AudioFrame, index: Int, frameOffset: Int, frameLength: Int) {
         val targetFrame = frames[index]
-        targetFrame!!.timecode = frame.timecode
+        targetFrame.timecode = frame.timecode
         targetFrame.volume = frame.volume
         targetFrame.setDataReference(frameBuffer, frameOffset, frameLength)
         frame.getData(frameBuffer, frameOffset)
@@ -246,25 +271,5 @@ class NonAllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat
 
     override fun signalWaiters() {
         synchronized(synchronizer) { synchronizer.notifyAll() }
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(NonAllocatingAudioFrameBuffer::class.java)
-        private fun createFrames(frameCount: Int, format: AudioDataFormat): Array<ReferenceMutableAudioFrame?> {
-            val frames = arrayOfNulls<ReferenceMutableAudioFrame>(frameCount)
-            for (i in frames.indices) {
-                frames[i] = ReferenceMutableAudioFrame()
-                frames[i]!!.format = format
-            }
-            return frames
-        }
-
-        private fun createSilentFrame(format: AudioDataFormat): ReferenceMutableAudioFrame {
-            val frame = ReferenceMutableAudioFrame()
-            frame.format = format
-            frame.setDataReference(format.silenceBytes(), 0, format.silenceBytes().size)
-            frame.volume = 0
-            return frame
-        }
     }
 }

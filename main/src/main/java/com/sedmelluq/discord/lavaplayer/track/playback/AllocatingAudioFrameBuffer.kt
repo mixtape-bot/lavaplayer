@@ -121,7 +121,6 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
         // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
         // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
         // offer with timeout, check stopping if timed out, then put?
-        var frame = frame
         if (stopping?.invoke() == true) {
             throw InterruptedException()
         }
@@ -133,11 +132,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
                 clearOnInsert = false
             }
 
-            if (frame is AbstractMutableAudioFrame) {
-                frame = frame.freeze()
-            }
-
-            audioFrames.put(frame)
+            audioFrames.put(if (frame is AbstractMutableAudioFrame) frame.freeze() else frame)
         }
     }
 
@@ -155,7 +150,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
     }
 
     private fun filterFrame(frame: AudioFrame?): AudioFrame? {
-        return if (frame == null || frame.volume != 0) frame else ImmutableAudioFrame(frame.timecode, format.silenceBytes(), 0, format)
+        return if (frame == null || frame.volume != 0) frame else ImmutableAudioFrame(frame.timecode, format.silenceBytes, 0, format)
     }
 
     override fun signalWaiters() {

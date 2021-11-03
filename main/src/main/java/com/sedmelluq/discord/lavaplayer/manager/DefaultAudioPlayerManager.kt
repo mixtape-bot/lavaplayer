@@ -132,7 +132,7 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
         return if (customExecutor != null) {
             customExecutor
         } else {
-            val bufferDuration = Optional.ofNullable(playerOptions.frameBufferDuration).orElse(frameBufferDuration)
+            val bufferDuration = playerOptions.frameBufferDuration ?: frameBufferDuration
             LocalAudioTrackExecutor(track, configuration, playerOptions, isUsingSeekGhosting, bufferDuration)
         }
     }

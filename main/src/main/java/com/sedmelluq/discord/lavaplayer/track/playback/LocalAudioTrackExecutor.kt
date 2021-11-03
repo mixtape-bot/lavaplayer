@@ -28,30 +28,29 @@ import java.util.concurrent.atomic.AtomicReference
 class LocalAudioTrackExecutor(
     private val audioTrack: InternalAudioTrack,
     configuration: AudioConfiguration,
-    playerOptions: AudioPlayerResources?,
-    useSeekGhosting: Boolean,
+    playerOptions: AudioPlayerResources,
+    private val useSeekGhosting: Boolean,
     bufferDuration: Int
 ) : AudioTrackExecutor {
     companion object {
         private val log = KotlinLogging.logger {  }
     }
 
+    @Volatile
+    private var trackException: Throwable? = null
     private var queuedStop by atomic(false)
     private var queuedSeek by atomic(-1L)
     private var lastFrameTimecode by atomic(0L)
-
-    private val useSeekGhosting: Boolean
     private val playingThread = AtomicReference<Thread?>()
     private val actionSynchronizer = Any()
     private val markerTracker = TrackMarkerManager()
     private var externalSeekPosition: Long = -1
     private var interruptableForSeek = false
-    @Volatile
-    private var trackException: Throwable? = null
+
     private val isPerformingSeek: Boolean
         get() = queuedSeek != -1L || useSeekGhosting && audioBuffer.hasClearOnInsert()
 
-    override val audioBuffer: AudioFrameBuffer
+    override val audioBuffer: AudioFrameBuffer = configuration.frameBufferFactory.create(bufferDuration, configuration.outputFormat) { queuedStop }
     override var state by atomic(AudioTrackState.INACTIVE)
     override var position: Long
         get() {
@@ -59,17 +58,12 @@ class LocalAudioTrackExecutor(
             return if (seek != -1L) seek else lastFrameTimecode
         }
         set(timecode) {
-            var timecode = timecode
             if (!audioTrack.isSeekable) {
                 return
             }
 
             synchronized(actionSynchronizer) {
-                if (timecode < 0) {
-                    timecode = 0
-                }
-
-                queuedSeek = timecode
+                queuedSeek = timecode.coerceAtLeast(0)
                 if (!useSeekGhosting) {
                     audioBuffer.clear()
                 }
@@ -78,7 +72,7 @@ class LocalAudioTrackExecutor(
             }
         }
 
-    val processingContext: AudioProcessingContext
+    val processingContext: AudioProcessingContext = AudioProcessingContext(configuration, audioBuffer, playerOptions, configuration.outputFormat)
     val stackTrace: Array<StackTraceElement>?
         get() {
             val thread = playingThread.get()
@@ -91,13 +85,6 @@ class LocalAudioTrackExecutor(
 
             return null
         }
-
-    init {
-        val currentFormat = configuration.outputFormat
-        audioBuffer = configuration.frameBufferFactory.create(bufferDuration, currentFormat) { queuedStop }
-        processingContext = AudioProcessingContext(configuration, audioBuffer, playerOptions!!, currentFormat)
-        this.useSeekGhosting = useSeekGhosting
-    }
 
     override fun execute(listener: TrackStateListener?) {
         var interrupt: InterruptedException? = null
@@ -240,13 +227,10 @@ class LocalAudioTrackExecutor(
                 }
             } catch (e: Exception) {
                 setInterruptableForSeek(false)
+
                 val interruption = findInterrupt(e)
                 proceed = interruption?.let { handlePlaybackInterrupt(it, seekExecutor) }
-                    ?: throw ExceptionTools.wrapUnfriendlyException(
-                        "Something went wrong when decoding the track.",
-                        FriendlyException.Severity.FAULT,
-                        e
-                    )
+                    ?: throw ExceptionTools.wrapUnfriendlyException("Something went wrong when decoding the track.", FriendlyException.Severity.FAULT, e)
             }
         }
     }

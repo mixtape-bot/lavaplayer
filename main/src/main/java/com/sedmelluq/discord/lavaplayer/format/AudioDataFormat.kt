@@ -44,23 +44,21 @@ abstract class AudioDataFormat(
     abstract val maximumChunkSize: Int
 
     /**
-     * @return Total number of samples in one frame.
+     * Total number of samples in one frame.
      */
-    fun totalSampleCount(): Int {
-        return chunkSampleCount * channelCount
-    }
+    val totalSampleCount: Int
+        get() = chunkSampleCount * channelCount
 
     /**
-     * @return The duration in milliseconds of one frame in this format.
+     * The duration in milliseconds of one frame in this format.
      */
-    fun frameDuration(): Long {
-        return chunkSampleCount * 1000L / sampleRate
-    }
+    val frameDuration: Long
+        get() = chunkSampleCount * 1000L / sampleRate
 
     /**
-     * @return Byte array representing a frame of silence in this format.
+     * Byte array representing a frame of silence in this format.
      */
-    abstract fun silenceBytes(): ByteArray
+    abstract val silenceBytes: ByteArray
 
     /**
      * @return Decoder to convert data in this format to short PCM.

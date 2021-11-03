@@ -21,7 +21,7 @@ class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount:
         const val CODEC_NAME_LE = "PCM_S16_LE"
     }
 
-    private val silenceBytes: ByteArray = ByteArray(channelCount * chunkSampleCount * 2)
+    override val silenceBytes: ByteArray = ByteArray(channelCount * chunkSampleCount * 2)
 
     override val codecName: String
         get() = CODEC_NAME_BE
@@ -31,10 +31,6 @@ class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount:
 
     override val maximumChunkSize: Int
         get() = silenceBytes.size
-
-    override fun silenceBytes(): ByteArray {
-        return silenceBytes
-    }
 
     override fun createDecoder(): AudioChunkDecoder {
         return PcmChunkDecoder(this, bigEndian)

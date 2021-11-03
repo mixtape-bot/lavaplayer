@@ -95,7 +95,7 @@ class AudioPlayerInputStream(
                 throw InterruptedIOException()
             }
             if (available() == 0 && provideSilence) {
-                addFrame(format.silenceBytes())
+                addFrame(format.silenceBytes)
                 break
             }
         }

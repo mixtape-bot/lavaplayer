@@ -21,11 +21,11 @@ class AudioPlayerResources {
      */
     var filterFactory: PcmFilterFactory? by _filterFactory
 
-    private val _frameBufferDuration = atomic(0)
+    private val _frameBufferDuration = atomic<Int?>(null)
 
     /**
      * Current frame buffer size. If not set, the global default is used. Changing this only affects the next track that
      * is started.
      */
-    var frameBufferDuration: Int by _frameBufferDuration
+    var frameBufferDuration: Int? by _frameBufferDuration
 }
