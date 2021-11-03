@@ -1,0 +1,3 @@
+[submodule "main/src/main/resources/natives"]
+	path = main/src/main/resources/natives
+	url = https://github.com/mixtape-oss/lavaplayer-natives
