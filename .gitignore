@@ -18,7 +18,6 @@ gradle-app.setting
 jebml/src
 *.iml
 
-**/resources/natives
 natives/dist
 natives/fdk-aac/**
 !natives/fdk-aac/CMakeLists.txt

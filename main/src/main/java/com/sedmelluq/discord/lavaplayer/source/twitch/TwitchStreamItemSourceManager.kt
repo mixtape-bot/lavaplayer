@@ -4,6 +4,7 @@ import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.Units
+import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
 import com.sedmelluq.discord.lavaplayer.tools.io.*
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
@@ -91,7 +92,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
 
         val channelId: String
         try {
-            val token = JsonBrowser.parse(accessToken["token"].text!!)
+            val token: JsonBrowser = accessToken["token"].text!!.decodeJson()
             channelId = token["channel_id"].safeText
         } catch (e: IOException) {
             return null

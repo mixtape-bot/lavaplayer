@@ -1,21 +1,18 @@
 package com.sedmelluq.discord.lavaplayer.manager
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.*
 import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory
 import com.sedmelluq.discord.lavaplayer.manager.event.AudioEvent
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider
-import mu.KotlinLogging
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
  */
 interface AudioPlayer : AudioFrameProvider, CoroutineScope {
     /**
-     * @return Currently playing track.
+     * The [AudioTrack] that is currently playing, or null if nothing is playing.
      */
     val playingTrack: AudioTrack?
 
@@ -72,22 +69,4 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
      * @param threshold Threshold in milliseconds to use
      */
     fun checkCleanup(threshold: Long)
-}
-
-@PublishedApi
-internal val playerOnLogger = KotlinLogging.logger("AudioPlayer.on")
-
-/**
- *
- */
-suspend inline fun <reified T : AudioEvent> AudioPlayer.on(scope: CoroutineScope = this, noinline block: suspend T.() -> Unit): Job {
-    return events
-        .buffer(UNLIMITED)
-        .filterIsInstance<T>()
-        .onEach { event ->
-            event
-                .runCatching { block() }
-                .onFailure { playerOnLogger.error(it) { "[${T::class.simpleName}]" } }
-        }
-        .launchIn(scope)
 }

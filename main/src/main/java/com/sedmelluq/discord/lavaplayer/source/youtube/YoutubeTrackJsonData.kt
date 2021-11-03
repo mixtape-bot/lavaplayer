@@ -1,6 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDebugInfo
+import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
 import mu.KotlinLogging
 
@@ -60,7 +61,7 @@ data class YoutubeTrackJsonData(
 
         private fun parsePlayerResponse(playerResponseText: String): JsonBrowser {
             try {
-                return JsonBrowser.parse(playerResponseText)
+                return playerResponseText.decodeJson()
             } catch (e: Exception) {
                 throw throwWithDebugInfo(log, e, "Failed to parse player_response", "value", playerResponseText)
             }

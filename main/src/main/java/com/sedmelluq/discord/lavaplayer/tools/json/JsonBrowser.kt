@@ -1,13 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.tools.json
 
 import kotlinx.serialization.*
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import java.io.IOException
 import java.io.InputStream
 import kotlin.reflect.KClass
 
+@Serializable(with = JsonBrowserSerializer::class)
 class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
-
     companion object {
         @JvmField
         val NULL_BROWSER = JsonBrowser(JsonNull)
@@ -25,8 +27,8 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
          */
         @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
-        fun parse(json: String) =
-            JsonBrowser(JsonTools.decode(json))
+        fun parse(json: String): JsonBrowser =
+            JsonTools.decode(json)
 
         /**
          * Parse from an input stream.
@@ -36,8 +38,8 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
          */
         @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
-        fun parse(stream: InputStream) =
-            JsonBrowser(JsonTools.decode(stream))
+        fun parse(stream: InputStream): JsonBrowser =
+            JsonTools.decode(stream)
     }
 
     /**
@@ -143,5 +145,18 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
     @OptIn(InternalSerializationApi::class)
     fun <T : Any> cast(kclass: KClass<T>): T {
         return JsonTools.format.decodeFromJsonElement(kclass.serializer(), element)
+    }
+}
+
+class JsonBrowserSerializer : KSerializer<JsonBrowser> {
+    override val descriptor = JsonElement.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): JsonBrowser {
+        val element = (decoder as JsonDecoder).decodeJsonElement()
+        return JsonBrowser(element)
+    }
+
+    override fun serialize(encoder: Encoder, value: JsonBrowser) {
+        (encoder as JsonEncoder).encodeJsonElement(value.element)
     }
 }

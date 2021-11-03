@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager
 import com.sedmelluq.discord.lavaplayer.track.*
+import kotlinx.serialization.json.JsonObject
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity

@@ -16,9 +16,9 @@ data class YouTubeVideoModel @OptIn(ExperimentalSerializationApi::class) constru
     @SerialName("title")
     private val titleRuns: TitleRuns,
     @JsonNames("longBylineText", "shortBylineText")
-    private val authorRuns: YouTubeRunsModel?,
+    private val authorRuns: YouTubeRunsModel? = null,
     @SerialName("lengthText")
-    private val lengthRuns: YouTubeRunsModel?,
+    private val lengthRuns: YouTubeRunsModel? = null,
     @SerialName("thumbnail")
     private val _thumbnail: Thumbnails
 ) {

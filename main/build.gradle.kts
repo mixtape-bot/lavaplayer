@@ -15,7 +15,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
 
     /* other */
-    implementation("com.sedmelluq:lavaplayer-natives:1.3.14")
     implementation("commons-io:commons-io:2.11.0")
     implementation("org.jsoup:jsoup:1.14.3")
     implementation("io.github.microutils:kotlin-logging:2.0.11")

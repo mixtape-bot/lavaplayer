@@ -21,7 +21,7 @@ class AudioFrameVolumeChanger private constructor(
     private val newVolume: Int
 ) : AudioFrameRebuilder {
     private val sampleBuffer: ShortBuffer = ByteBuffer
-        .allocateDirect(format.totalSampleCount() * 2)
+        .allocateDirect(format.totalSampleCount * 2)
         .order(ByteOrder.nativeOrder())
         .asShortBuffer()
     private val volumeProcessor: PcmVolumeProcessor = PcmVolumeProcessor(100)

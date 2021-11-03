@@ -25,7 +25,7 @@ class FinalPcmAudioFilter(context: AudioProcessingContext, private val postProce
 
     private val format: AudioDataFormat = context.outputFormat
     private val frameBuffer: ShortBuffer = ByteBuffer
-        .allocateDirect(format.totalSampleCount() * 2)
+        .allocateDirect(format.totalSampleCount * 2)
         .order(ByteOrder.nativeOrder())
         .asShortBuffer()
     private var ignoredFrames: Long = 0
