@@ -1,78 +1,48 @@
-package com.sedmelluq.lava.common.natives.architecture;
+package com.sedmelluq.lava.common.natives.architecture
 
-import com.sedmelluq.lava.common.natives.NativeLibraryProperties;
+import com.sedmelluq.lava.common.natives.NativeLibraryProperties
 
-import java.util.Optional;
-
-public class SystemType {
-    public final ArchitectureType architectureType;
-    public final OperatingSystemType osType;
-
-    public SystemType(ArchitectureType architectureType, OperatingSystemType osType) {
-        this.architectureType = architectureType;
-        this.osType = osType;
-    }
-
-    public static SystemType detect(NativeLibraryProperties properties) {
-        String systemName = properties.getSystemName();
-
-        if (systemName != null) {
-            return new SystemType(
-                () -> systemName,
-                new UnknownOperatingSystem(
-                    Optional.ofNullable(properties.getLibraryFileNamePrefix()).orElse("lib"),
-                    Optional.ofNullable(properties.getLibraryFileNameSuffix()).orElse(".so")
-                )
-            );
-        }
-
-        OperatingSystemType osType = DefaultOperatingSystemTypes.detect();
-
-        String explicitArchitecture = properties.getArchitectureName();
-        ArchitectureType architectureType = explicitArchitecture != null ? () -> explicitArchitecture :
-            DefaultArchitectureTypes.detect();
-
-        return new SystemType(architectureType, osType);
-    }
-
-    public String formatSystemName() {
-        if (osType.identifier() != null) {
-            if (osType == DefaultOperatingSystemTypes.DARWIN) {
-                return osType.identifier();
-            } else {
-                return osType.identifier() + "-" + architectureType.identifier();
-            }
+public class SystemType(
+    public val architectureType: ArchitectureType,
+    public val osType: OperatingSystemType
+) {
+    public fun formatSystemName(): String? {
+        return if (osType.identifier != null) {
+            osType.identifier + "-" + architectureType.identifier
         } else {
-            return architectureType.identifier();
+            architectureType.identifier
         }
     }
 
-    public String formatLibraryName(String libraryName) {
-        return osType.libraryFilePrefix() + libraryName + osType.libraryFileSuffix();
+    public fun formatLibraryName(libraryName: String): String {
+        return osType.libraryFilePrefix + libraryName + osType.libraryFileSuffix
     }
 
-    private static class UnknownOperatingSystem implements OperatingSystemType {
-        private final String libraryFilePrefix;
-        private final String libraryFileSuffix;
+    private data class UnknownOperatingSystem(override val libraryFilePrefix: String, override val libraryFileSuffix: String) : OperatingSystemType {
+        override val identifier: String?
+            get() = null
+    }
 
-        private UnknownOperatingSystem(String libraryFilePrefix, String libraryFileSuffix) {
-            this.libraryFilePrefix = libraryFilePrefix;
-            this.libraryFileSuffix = libraryFileSuffix;
-        }
+    public companion object {
+        @JvmStatic
+        public fun detect(properties: NativeLibraryProperties): SystemType {
+            val systemName = properties.systemName
+            if (systemName != null) {
+                val osType = UnknownOperatingSystem(
+                    libraryFilePrefix = properties.libraryFileNamePrefix ?: "lib",
+                    libraryFileSuffix = properties.libraryFileNameSuffix ?: ".so"
+                )
 
-        @Override
-        public String identifier() {
-            return null;
-        }
+                return SystemType(ArchitectureType(systemName), osType)
+            }
 
-        @Override
-        public String libraryFilePrefix() {
-            return libraryFilePrefix;
-        }
+            val architectureType = properties.architectureName?.let { ArchitectureType(it) }
+                ?: DefaultArchitectureTypes.detect()
 
-        @Override
-        public String libraryFileSuffix() {
-            return libraryFileSuffix;
+            return SystemType(
+                architectureType = architectureType,
+                osType = DefaultOperatingSystemTypes.detect()
+            )
         }
     }
 }

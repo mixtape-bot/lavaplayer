@@ -1,7 +1,7 @@
 package com.sedmelluq.lava.common.tools
 
 import kotlinx.atomicfu.atomic
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import java.lang.Runnable
 import java.util.concurrent.ThreadFactory
 
@@ -12,15 +12,16 @@ import java.util.concurrent.ThreadFactory
  * @param exitCallback Runnable to be executed when the thread exits.
  * @param nameFormat   Runnable to be executed when the thread exits.
  */
-class DaemonThreadFactory @JvmOverloads constructor(
+public class DaemonThreadFactory @JvmOverloads constructor(
     name: String?,
     exitCallback: Runnable? = null,
     nameFormat: String? = DEFAULT_NAME_FORMAT
 ) : ThreadFactory {
-    companion object {
-        private val log = LoggerFactory.getLogger(DaemonThreadFactory::class.java)
+    public companion object {
+        private val log = KotlinLogging.logger {  }
         private var poolNumber by atomic(1)
-        var DEFAULT_NAME_FORMAT = "lava-daemon-pool-%s-%d-thread-"
+
+        public var DEFAULT_NAME_FORMAT: String = "lava-daemon-pool-%s-%d-thread-"
     }
 
     private val group: ThreadGroup
@@ -62,7 +63,7 @@ class DaemonThreadFactory @JvmOverloads constructor(
             try {
                 exitCallback?.run()
             } catch (throwable: Throwable) {
-                log.error("Thread exit notification threw an exception.", throwable)
+                log.error(throwable) { "Thread exit notification threw an exception." }
             } finally {
                 if (wasInterrupted) {
                     Thread.currentThread().interrupt()

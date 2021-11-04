@@ -1,53 +1,31 @@
-package com.sedmelluq.lava.common.natives;
+package com.sedmelluq.lava.common.natives
 
-public class SystemNativeLibraryProperties implements NativeLibraryProperties {
-    private final String libraryName;
-    private final String propertyPrefix;
+public class SystemNativeLibraryProperties(private val libraryName: String, private val propertyPrefix: String) : NativeLibraryProperties {
+    override val libraryPath: String?
+        get() = get("path")
 
-    public SystemNativeLibraryProperties(String libraryName, String propertyPrefix) {
-        this.libraryName = libraryName;
-        this.propertyPrefix = propertyPrefix;
-    }
+    override val libraryDirectory: String?
+        get() = get("dir")
 
-    @Override
-    public String getLibraryPath() {
-        return get("path");
-    }
+    override val extractionPath: String?
+        get() = get("extractPath")
 
-    @Override
-    public String getLibraryDirectory() {
-        return get("dir");
-    }
+    override val systemName: String?
+        get() = get("system")
 
-    @Override
-    public String getExtractionPath() {
-        return get("extractPath");
-    }
+    override val architectureName: String?
+        get() = get("arch")
 
-    @Override
-    public String getSystemName() {
-        return get("system");
-    }
+    override val libraryFileNamePrefix: String?
+        get() = get("libPrefix")
 
-    @Override
-    public String getArchitectureName() {
-        return get("arch");
-    }
+    override val libraryFileNameSuffix: String?
+        get() = get("libSuffix")
 
-    @Override
-    public String getLibraryFileNamePrefix() {
-        return get("libPrefix");
-    }
-
-    @Override
-    public String getLibraryFileNameSuffix() {
-        return get("libSuffix");
-    }
-
-    private String get(String property) {
+    private operator fun get(property: String): String? {
         return System.getProperty(
-            propertyPrefix + libraryName + "." + property,
+            "$propertyPrefix$libraryName.$property",
             System.getProperty(propertyPrefix + property)
-        );
+        )
     }
 }

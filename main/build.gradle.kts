@@ -6,7 +6,7 @@ plugins {
 }
 
 val moduleName = "lavaplayer"
-version = "1.5.2"
+version = "1.5.3"
 
 dependencies {
     /* kotlin */
@@ -20,7 +20,7 @@ dependencies {
     implementation("io.github.microutils:kotlin-logging:2.0.11")
 
     api("org.slf4j:slf4j-api:1.7.32")
-    api("com.sedmelluq:lava-common:1.2.0")
+    api("com.sedmelluq:lava-common:1.2.2")
     api("org.apache.httpcomponents:httpclient:4.5.13")
 
     /* test */

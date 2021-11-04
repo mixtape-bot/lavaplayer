@@ -1,8 +1,14 @@
-package com.sedmelluq.lava.common.natives.architecture;
+package com.sedmelluq.lava.common.natives.architecture
 
 public interface ArchitectureType {
+    public companion object {
+        public operator fun invoke(identifier: String): ArchitectureType = object : ArchitectureType {
+            override val identifier: String = identifier
+        }
+    }
+
     /**
-     * @return Identifier used in directory names (combined with OS identifier) for this ABI
+     * The identifier used in directory names (combined with OS identifier) for this ABI
      */
-    String identifier();
+    public val identifier: String?
 }

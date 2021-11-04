@@ -1,20 +1,14 @@
-package com.sedmelluq.lava.common.tools;
+package com.sedmelluq.lava.common.tools
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.*;
+import mu.KotlinLogging
+import java.util.concurrent.*
 
 /**
  * Utility methods for working with executors.
  */
-public class ExecutorTools {
-    /**
-     * A completed Future<Void> instance.
-     */
-    public static final CompletedVoidFuture COMPLETED_VOID = new CompletedVoidFuture();
-    private static final Logger log = LoggerFactory.getLogger(ExecutorTools.class);
-    private static final long WAIT_TIME = 1000L;
+public object ExecutorTools {
+    private val log = KotlinLogging.logger {  }
+    private const val WAIT_TIME = 1000L
 
     /**
      * Shut down an executor and log the shutdown result. The executor is given a fixed amount of time to shut down, if it
@@ -23,24 +17,22 @@ public class ExecutorTools {
      * @param executorService Executor service to shut down
      * @param description     Description of the service to use for logging
      */
-    public static void shutdownExecutor(ExecutorService executorService, String description) {
+    public fun shutdownExecutor(executorService: ExecutorService?, description: String?) {
         if (executorService == null) {
-            return;
+            return
         }
 
-        log.debug("Shutting down executor {}", description);
-
-        executorService.shutdownNow();
-
+        log.debug { "Shutting down executor $description" }
+        executorService.shutdownNow()
         try {
             if (!executorService.awaitTermination(WAIT_TIME, TimeUnit.MILLISECONDS)) {
-                log.debug("Executor {} did not shut down in {}", description, WAIT_TIME);
+                log.debug { "Executor $description did not shut down in $WAIT_TIME" }
             } else {
-                log.debug("Executor {} successfully shut down", description);
+                log.debug { "Executor $description successfully shut down" }
             }
-        } catch (InterruptedException e) {
-            log.debug("Received an interruption while shutting down executor {}", description);
-            Thread.currentThread().interrupt();
+        } catch (e: InterruptedException) {
+            log.debug { "Received an interruption while shutting down executor $description" }
+            Thread.currentThread().interrupt()
         }
     }
 
@@ -56,64 +48,65 @@ public class ExecutorTools {
      * @param threadFactory Thread factory to create pool threads with
      * @return An eagerly scaling thread pool executor
      */
-    public static ThreadPoolExecutor createEagerlyScalingExecutor(int coreSize, int maximumSize, long timeout,
-                                                                  int queueCapacity, ThreadFactory threadFactory) {
+    public fun createEagerlyScalingExecutor(
+        coreSize: Int,
+        maximumSize: Int,
+        timeout: Long,
+        queueCapacity: Int,
+        threadFactory: ThreadFactory?
+    ): ThreadPoolExecutor {
+        val executor = ThreadPoolExecutor(
+            coreSize,
+            maximumSize,
+            timeout,
+            TimeUnit.MILLISECONDS,
+            EagerlyScalingTaskQueue(queueCapacity),
+            threadFactory
+        )
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(coreSize, maximumSize, timeout, TimeUnit.MILLISECONDS,
-            new EagerlyScalingTaskQueue(queueCapacity), threadFactory);
-
-        executor.setRejectedExecutionHandler(new EagerlyScalingRejectionHandler());
-        return executor;
+        executor.rejectedExecutionHandler = EagerlyScalingRejectionHandler()
+        return executor
     }
 
-    private static class EagerlyScalingTaskQueue extends LinkedBlockingQueue<Runnable> {
-        public EagerlyScalingTaskQueue(int capacity) {
-            super(capacity);
+    private class EagerlyScalingTaskQueue(capacity: Int) : LinkedBlockingQueue<Runnable>(capacity) {
+        override fun offer(runnable: Runnable): Boolean {
+            return isEmpty() && super.offer(runnable)
         }
 
-        @Override
-        public boolean offer(Runnable runnable) {
-            return isEmpty() && super.offer(runnable);
-        }
-
-        public boolean offerDirectly(Runnable runnable) {
-            return super.offer(runnable);
+        fun offerDirectly(runnable: Runnable): Boolean {
+            return super.offer(runnable)
         }
     }
 
-    private static class EagerlyScalingRejectionHandler implements RejectedExecutionHandler {
-        @Override
-        public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-            if (!((EagerlyScalingTaskQueue) executor.getQueue()).offerDirectly(runnable)) {
-                throw new RejectedExecutionException("Task " + runnable.toString() + " rejected from " + runnable.toString());
+    private class EagerlyScalingRejectionHandler : RejectedExecutionHandler {
+        override fun rejectedExecution(runnable: Runnable, executor: ThreadPoolExecutor) {
+            if (!(executor.queue as EagerlyScalingTaskQueue).offerDirectly(runnable)) {
+                throw RejectedExecutionException("Task $runnable rejected from $runnable")
             }
         }
     }
 
-    private static class CompletedVoidFuture implements Future<Void> {
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
+    public object CompletedVoidFuture : Future<Void?> {
+        override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
+            return false
         }
 
-        @Override
-        public boolean isCancelled() {
-            return false;
+        override fun isCancelled(): Boolean {
+            return false
         }
 
-        @Override
-        public boolean isDone() {
-            return true;
+        override fun isDone(): Boolean {
+            return true
         }
 
-        @Override
-        public Void get() throws InterruptedException, ExecutionException {
-            return null;
+        @Throws(InterruptedException::class, ExecutionException::class)
+        override fun get(): Void? {
+            return null
         }
 
-        @Override
-        public Void get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return null;
+        @Throws(InterruptedException::class, ExecutionException::class, TimeoutException::class)
+        override fun get(timeout: Long, unit: TimeUnit): Void? {
+            return null
         }
     }
 }
