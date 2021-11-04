@@ -57,8 +57,6 @@ object FlacMetadataReader {
         trackInfoBuilder: FlacTrackInfoBuilder
     ): Boolean {
         val header = readMetadataHeader(dataInput)
-        println(header)
-
         when (header.blockType) {
             is FlacMetadataBlockType.Seektable -> readSeekTableBlock(dataInput, trackInfoBuilder, header.blockLength)
             is FlacMetadataBlockType.VorbisComment -> readCommentBlock(dataInput, inputStream, trackInfoBuilder)
