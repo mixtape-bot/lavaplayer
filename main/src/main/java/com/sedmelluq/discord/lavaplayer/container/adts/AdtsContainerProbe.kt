@@ -1,54 +1,44 @@
-package com.sedmelluq.discord.lavaplayer.container.adts;
+package com.sedmelluq.discord.lavaplayer.container.adts
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
-import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.container.adts.AdtsContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import mu.KotlinLogging
+import org.slf4j.LoggerFactory
+import java.io.IOException
 
 /**
  * Container detection probe for ADTS stream format.
  */
-public class AdtsContainerProbe implements MediaContainerProbe {
-    private static final Logger log = LoggerFactory.getLogger(AdtsContainerProbe.class);
+object AdtsContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger {  }
 
-    @Override
-    public String getName() {
-        return "adts";
-    }
+    override val name: String = "adts"
 
-    @Override
-    public boolean matchesHints(MediaContainerHints hints) {
-        boolean invalidMimeType = hints.mimeType != null && !"audio/aac".equalsIgnoreCase(hints.mimeType);
-        boolean invalidFileExtension = hints.fileExtension != null && !"aac".equalsIgnoreCase(hints.fileExtension);
-        return hints.isPresent() && !invalidMimeType && !invalidFileExtension;
-    }
-
-    @Override
-    public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException {
-        AdtsStreamReader reader = new AdtsStreamReader(inputStream);
-
+    @Throws(IOException::class)
+    override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
+        val reader = AdtsStreamReader(inputStream)
         if (reader.findPacketHeader(MediaContainerDetection.STREAM_SCAN_DISTANCE) == null) {
-            return null;
+            return null
         }
 
-        log.debug("Track {} is an ADTS stream.", reference.getIdentifier());
-
-        return supportedFormat(this, null, AudioTrackInfoBuilder.create(reference, inputStream).build());
+        log.debug { "Track ${reference.identifier} is an ADTS stream." }
+        return MediaContainerDetectionResult.supportedFormat(this, null, create(reference, inputStream).build())
     }
 
-    @Override
-    public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-        return new AdtsAudioTrack(trackInfo, inputStream);
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        AdtsAudioTrack(trackInfo, inputStream)
+
+    override fun matchesHints(hints: MediaContainerHints?): Boolean {
+        val invalidMimeType = hints!!.mimeType != null && !"audio/aac".equals(hints.mimeType, ignoreCase = true)
+        val invalidFileExtension = hints.fileExtension != null && !"aac".equals(hints.fileExtension, ignoreCase = true)
+        return hints.isPresent && !invalidMimeType && !invalidFileExtension
     }
 }

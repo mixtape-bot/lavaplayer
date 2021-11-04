@@ -21,17 +21,17 @@ enum class MediaContainer(
      */
     val probe: MediaContainerProbe
 ) {
-    WAV(WavContainerProbe()),
-    MKV(MatroskaContainerProbe()),
-    MP4(MpegContainerProbe()),
-    FLAC(FlacContainerProbe()),
-    OGG(OggContainerProbe()),
+    WAV(WavContainerProbe),
+    MKV(MatroskaContainerProbe),
+    MP4(MpegContainerProbe),
+    FLAC(FlacContainerProbe),
+    OGG(OggContainerProbe),
+    PLAIN(PlainPlaylistContainerProbe),
+    MP3(Mp3ContainerProbe),
     M3U(M3uPlaylistContainerProbe()),
     PLS(PlsPlaylistContainerProbe()),
-    PLAIN(PlainPlaylistContainerProbe()),
-    MP3(Mp3ContainerProbe()),
-    ADTS(AdtsContainerProbe()),
-    MPEGADTS(MpegAdtsContainerProbe());
+    ADTS(AdtsContainerProbe),
+    MPEGADTS(MpegAdtsContainerProbe);
 
     companion object {
         fun asList(): MutableList<MediaContainerProbe> {

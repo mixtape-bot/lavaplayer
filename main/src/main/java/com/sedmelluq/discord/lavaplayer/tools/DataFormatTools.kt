@@ -85,25 +85,12 @@ object DataFormatTools {
 
     @JvmStatic
     fun decodeUrlEncodedItems(input: String, escapedSeparator: Boolean): Map<String, String> {
-        var input = input
-        if (escapedSeparator) {
-            input = input.replace("""\\u0026""", "&")
-        }
+        val kvPairs = URLEncodedUtils.parse(
+            if (escapedSeparator) input.replace("""\\u0026""", "&") else input,
+            Charsets.UTF_8
+        )
 
-        return convertToMapLayout(URLEncodedUtils.parse(input, Charsets.UTF_8))
-    }
-
-    /**
-     * Returns the specified default value if the value itself is null.
-     *
-     * @param value        Value to check
-     * @param defaultValue Default value to return if value is null
-     * @param <T>          The type of the value
-     * @return Value or default value
-    </T> */
-    @JvmStatic
-    fun <T> defaultOnNull(value: T?, defaultValue: T): T {
-        return value ?: defaultValue
+        return convertToMapLayout(kvPairs)
     }
 
     /**

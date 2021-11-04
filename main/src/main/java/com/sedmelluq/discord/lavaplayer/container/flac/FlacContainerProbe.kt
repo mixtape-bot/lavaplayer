@@ -12,19 +12,18 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
 import mu.KotlinLogging
-import org.slf4j.LoggerFactory
 import java.io.IOException
 
 /**
  * Container detection probe for MP3 format.
  */
-class FlacContainerProbe : MediaContainerProbe {
-    override val name: String
-        get() = "flac"
+object FlacContainerProbe : MediaContainerProbe {
+    private const val TITLE_TAG = "TITLE"
+    private const val ARTIST_TAG = "ARTIST"
 
-    override fun matchesHints(hints: MediaContainerHints?): Boolean {
-        return false
-    }
+    private val log = KotlinLogging.logger { }
+
+    override val name: String = "flac"
 
     @Throws(IOException::class)
     override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
@@ -47,14 +46,9 @@ class FlacContainerProbe : MediaContainerProbe {
         return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
     }
 
+    override fun matchesHints(hints: MediaContainerHints?): Boolean = false
+
     override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack {
         return FlacAudioTrack(trackInfo, inputStream)
-    }
-
-    companion object {
-        private const val TITLE_TAG = "TITLE"
-        private const val ARTIST_TAG = "ARTIST"
-
-        private val log = KotlinLogging.logger { }
     }
 }

@@ -164,26 +164,34 @@ public class MpegFileLoader {
     private void parseTrackInfo(MpegSectionInfo trak) throws IOException {
         final MpegTrackInfo.Builder trackInfo = new MpegTrackInfo.Builder();
 
-        reader.in(trak).handleVersioned("tkhd", tkhd -> {
-            reader.data.skipBytes(tkhd.version == 1 ? 16 : 8);
-
-            trackInfo.setTrackId(reader.data.readInt());
-        }).handle("mdia", mdia -> {
-            reader.in(mdia).handleVersioned("hdlr", hdlr -> {
-                reader.data.skipBytes(4);
-
-                trackInfo.setHandler(reader.readFourCC());
-            }).handleVersioned("mdhd", mdhd ->
-                standardFileReader.readMediaHeaders(mdhd, trackInfo.getTrackId())
-            ).handle("minf", minf -> {
-                reader.in(minf).handle("stbl", stbl -> {
-                    MpegReader.Chain chain = reader.in(stbl);
-                    parseTrackCodecInfo(chain, trackInfo);
-                    standardFileReader.attachSampleTableParsers(chain, trackInfo.getTrackId());
-                    chain.run();
-                }).run();
-            }).run();
-        }).run();
+        reader
+            .in(trak)
+            .handleVersioned("tkhd", tkhd -> {
+                reader.data.skipBytes(tkhd.version == 1 ? 16 : 8);
+                trackInfo.setTrackId(reader.data.readInt());
+            })
+            .handle("mdia", mdia -> {
+                reader
+                    .in(mdia)
+                    .handleVersioned("hdlr", hdlr -> {
+                        reader.data.skipBytes(4);
+                        trackInfo.setHandler(reader.readFourCC());
+                    })
+                    .handleVersioned("mdhd", mdhd -> standardFileReader.readMediaHeaders(mdhd, trackInfo.getTrackId()))
+                    .handle("minf", minf -> {
+                        reader
+                            .in(minf)
+                            .handle("stbl", stbl -> {
+                                MpegReader.Chain chain = reader.in(stbl);
+                                parseTrackCodecInfo(chain, trackInfo);
+                                standardFileReader.attachSampleTableParsers(chain, trackInfo.getTrackId());
+                                chain.run();
+                            })
+                            .run();
+                    })
+                    .run();
+            })
+            .run();
 
         tracks.add(trackInfo.build());
     }

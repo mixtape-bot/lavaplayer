@@ -1,47 +1,16 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg
 
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.ReadableByteChannel
 
 /**
  * No-op MP4 track consumer, for probing purposes.
+ *
+ * @param track Track info.
  */
-public class MpegNoopTrackConsumer implements MpegTrackConsumer {
-    private final MpegTrackInfo trackInfo;
-
-    /**
-     * @param trackInfo Track info.
-     */
-    public MpegNoopTrackConsumer(MpegTrackInfo trackInfo) {
-        this.trackInfo = trackInfo;
-    }
-
-    @Override
-    public MpegTrackInfo getTrack() {
-        return trackInfo;
-    }
-
-    @Override
-    public void initialise() {
-        // Nothing to do
-    }
-
-    @Override
-    public void seekPerformed(long requestedTimecode, long providedTimecode) {
-        // Nothing to do
-    }
-
-    @Override
-    public void flush() throws InterruptedException {
-        // Nothing to do
-    }
-
-    @Override
-    public void consume(ReadableByteChannel channel, int length) throws InterruptedException {
-        // Nothing to do
-    }
-
-    @Override
-    public void close() {
-        // Nothing to do
-    }
+class MpegNoopTrackConsumer(override val track: MpegTrackInfo) : MpegTrackConsumer {
+    override fun initialise() = Unit
+    override fun seekPerformed(requestedTimecode: Long, providedTimecode: Long) = Unit
+    override fun flush() = Unit
+    override fun consume(channel: ReadableByteChannel?, length: Int) = Unit
+    override fun close() = Unit
 }

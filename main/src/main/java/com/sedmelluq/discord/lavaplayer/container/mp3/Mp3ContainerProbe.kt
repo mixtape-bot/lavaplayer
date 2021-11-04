@@ -15,20 +15,11 @@ import java.io.IOException
 /**
  * Container detection probe for MP3 format.
  */
-class Mp3ContainerProbe : MediaContainerProbe {
-    companion object {
-        private val log = KotlinLogging.logger { }
-        private val ID3_TAG = intArrayOf(0x49, 0x44, 0x33)
-    }
+object Mp3ContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger { }
+    private val ID3_TAG = intArrayOf(0x49, 0x44, 0x33)
 
-    override val name: String
-        get() = "mp3"
-
-    override fun matchesHints(hints: MediaContainerHints?): Boolean {
-        val invalidMimeType = hints!!.mimeType != null && !"audio/mpeg".equals(hints.mimeType, ignoreCase = true)
-        val invalidFileExtension = hints.fileExtension != null && !"mp3".equals(hints.fileExtension, ignoreCase = true)
-        return hints.isPresent && !invalidMimeType && !invalidFileExtension
-    }
+    override val name: String = "mp3"
 
     @Throws(IOException::class)
     override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
@@ -55,11 +46,12 @@ class Mp3ContainerProbe : MediaContainerProbe {
         }
     }
 
-    override fun createTrack(
-        parameters: String?,
-        trackInfo: AudioTrackInfo,
-        inputStream: SeekableInputStream
-    ): AudioTrack {
-        return Mp3AudioTrack(trackInfo, inputStream)
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        Mp3AudioTrack(trackInfo, inputStream)
+
+    override fun matchesHints(hints: MediaContainerHints?): Boolean {
+        val invalidMimeType = hints!!.mimeType != null && !"audio/mpeg".equals(hints.mimeType, ignoreCase = true)
+        val invalidFileExtension = hints.fileExtension != null && !"mp3".equals(hints.fileExtension, ignoreCase = true)
+        return hints.isPresent && !invalidMimeType && !invalidFileExtension
     }
 }

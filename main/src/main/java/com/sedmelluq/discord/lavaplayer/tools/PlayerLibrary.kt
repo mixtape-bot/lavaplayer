@@ -22,6 +22,7 @@ object PlayerLibrary {
         } catch (e: Exception) {
             // Something went wrong.
         }
+
         return "UNKNOWN"
     }
 }

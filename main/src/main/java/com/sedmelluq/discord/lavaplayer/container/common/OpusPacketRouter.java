@@ -30,7 +30,6 @@ public class OpusPacketRouter {
     private final byte[] headerBytes;
     private final MutableAudioFrame offeredFrame;
 
-    private long currentFrameDuration;
     private long currentTimecode;
     private long requestedTimecode;
     private OpusDecoder opusDecoder;
@@ -130,8 +129,7 @@ public class OpusPacketRouter {
             inputFormat = new OpusAudioDataFormat(inputChannels, inputFrequency, frameSize);
         }
 
-        currentFrameDuration = frameSize * 1000 / inputFrequency;
-        currentTimecode += currentFrameDuration;
+        currentTimecode += frameSize * 1000L / inputFrequency;
         return frameSize;
     }
 
@@ -175,15 +173,13 @@ public class OpusPacketRouter {
     private void checkDecoderNecessity() {
         if (AudioPipelineFactory.isProcessingRequired(context, inputFormat)) {
             if (opusDecoder == null) {
-                log.debug("Enabling reencode mode on opus track.");
-
+                log.debug("Enabling re-encode mode on opus track.");
                 initialiseDecoder();
-
                 AudioFrameVolumeChanger.apply(context);
             }
         } else {
             if (opusDecoder != null) {
-                log.debug("Enabling passthrough mode on opus track.");
+                log.debug("Enabling pass-through mode on opus track.");
 
                 destroyDecoder();
 

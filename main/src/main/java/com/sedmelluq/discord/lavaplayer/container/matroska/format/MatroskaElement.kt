@@ -1,103 +1,84 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska.format;
+package com.sedmelluq.discord.lavaplayer.container.matroska.format
 
 /**
  * Matroska container element.
  */
-public class MatroskaElement {
-    protected final int level;
-    protected long id;
-    protected MatroskaElementType type;
-    protected long position;
-    protected int headerSize;
-    protected int dataSize;
-
-    protected MatroskaElement(int level) {
-        this.level = level;
-    }
-
+open class MatroskaElement protected constructor(
     /**
      * @return The depth of the element in the element tree.
      */
-    public int getLevel() {
-        return level;
-    }
+    val level: Int
+) {
+    /**
+     * The EBML code of this element.
+     */
+    open var id: Long = 0
+        protected set
 
     /**
-     * @return The EBML code of the element.
+     * The type of this element, Unknown if not listed in the enum.
      */
-    public long getId() {
-        return id;
-    }
+    open var type: MatroskaElementType? = null
+        protected set
 
     /**
-     * @return Element type, Unknown if not listed in the enum.
+     * The absolute position of this element in the file.
      */
-    public MatroskaElementType getType() {
-        return type;
-    }
+    open var position: Long = 0
+        protected set
 
     /**
-     * @return Absolute position of the element in the file.
+     * The size of the header in bytes.
      */
-    public long getPosition() {
-        return position;
-    }
+    open var headerSize = 0
+        protected set
 
     /**
-     * @return Size of the header in bytes.
+     * Size of the payload in bytes.
      */
-    public int getHeaderSize() {
-        return headerSize;
-    }
-
-    /**
-     * @return Size of the payload in bytes.
-     */
-    public int getDataSize() {
-        return dataSize;
-    }
+    open var dataSize = 0
 
     /**
      * @param type Element type.
      * @return True if this element is of the specified type.
      */
-    public boolean is(MatroskaElementType type) {
-        return type.id == this.id;
+    fun `is`(type: MatroskaElementType): Boolean {
+        return type.id == id
     }
 
     /**
      * @param dataType Element data type.
      * @return True if the type of the element uses the specified data type.
      */
-    public boolean is(MatroskaElementType.DataType dataType) {
-        return dataType == type.dataType;
+    fun `is`(dataType: MatroskaElementType.DataType): Boolean {
+        return dataType == type!!.dataType
     }
 
     /**
      * @param currentPosition Absolute position to check against.
      * @return The number of bytes from the specified position to the end of this element.
      */
-    public long getRemaining(long currentPosition) {
-        return (position + headerSize + dataSize) - currentPosition;
+    fun getRemaining(currentPosition: Long): Long {
+        return position + headerSize + dataSize - currentPosition
     }
 
     /**
      * @return The absolute position of the data of this element.
      */
-    public long getDataPosition() {
-        return position + headerSize;
-    }
+    val dataPosition: Long
+        get() = position + headerSize
 
     /**
      * @return A frozen version of the element safe to keep for later use.
      */
-    public MatroskaElement frozen() {
-        MatroskaElement element = new MatroskaElement(level);
-        element.id = id;
-        element.type = type;
-        element.position = position;
-        element.headerSize = headerSize;
-        element.dataSize = dataSize;
-        return element;
+    fun frozen(): MatroskaElement {
+        val element = MatroskaElement(level)
+        element.id = id
+        element.type = type
+        element.position = position
+        element.headerSize = headerSize
+        element.dataSize = dataSize
+
+        return element
     }
 }

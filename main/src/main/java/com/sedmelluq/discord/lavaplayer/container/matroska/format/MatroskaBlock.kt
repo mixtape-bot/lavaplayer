@@ -1,31 +1,31 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska.format;
+package com.sedmelluq.discord.lavaplayer.container.matroska.format
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.IOException
+import java.nio.ByteBuffer
 
 /**
  * Provides information and buffer to read from for a Matroska block.
  */
-public interface MatroskaBlock {
+interface MatroskaBlock {
     /**
-     * @return The timecode of this block relative to its cluster
+     * The timecode of this block relative to its cluster
      */
-    int getTimecode();
+    val timecode: Int
 
     /**
-     * @return The track number which this block is for
+     * The track number which this block is for
      */
-    int getTrackNumber();
+    val trackNumber: Int
 
     /**
-     * @return Whether this block is a keyframe
+     * Whether this block is a keyframe
      */
-    boolean isKeyFrame();
+    val isKeyFrame: Boolean
 
     /**
-     * @return The number of frames in this block
+     * The number of frames in this block
      */
-    int getFrameCount();
+    val frameCount: Int
 
     /**
      * The reader must already be positioned at the frame that is to be read next.
@@ -36,5 +36,6 @@ public interface MatroskaBlock {
      * of this buffer are only valid until the next call to this method.
      * @throws IOException On read error.
      */
-    ByteBuffer getNextFrameBuffer(MatroskaFileReader reader, int index) throws IOException;
+    @Throws(IOException::class)
+    fun getNextFrameBuffer(reader: MatroskaFileReader, index: Int): ByteBuffer
 }

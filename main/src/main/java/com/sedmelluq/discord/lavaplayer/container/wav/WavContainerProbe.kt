@@ -14,17 +14,10 @@ import java.io.IOException
 /**
  * Container detection probe for WAV format.
  */
-class WavContainerProbe : MediaContainerProbe {
-    companion object {
-        private val log = KotlinLogging.logger { }
-    }
+object WavContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger { }
 
-    override val name: String
-        get() = "wav"
-
-    override fun matchesHints(hints: MediaContainerHints?): Boolean {
-        return false
-    }
+    override val name: String = "wav"
 
     @Throws(IOException::class)
     override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
@@ -44,11 +37,8 @@ class WavContainerProbe : MediaContainerProbe {
         return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
     }
 
-    override fun createTrack(
-        parameters: String?,
-        trackInfo: AudioTrackInfo,
-        inputStream: SeekableInputStream
-    ): AudioTrack {
-        return WavAudioTrack(trackInfo, inputStream)
-    }
+    override fun matchesHints(hints: MediaContainerHints?): Boolean = false
+
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        WavAudioTrack(trackInfo, inputStream)
 }

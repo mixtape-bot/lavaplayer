@@ -1,79 +1,59 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska;
+package com.sedmelluq.discord.lavaplayer.container.matroska
 
-import com.sedmelluq.discord.lavaplayer.container.common.AacPacketRouter;
-import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
-import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAacTrackConsumer;
-import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder;
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
+import com.sedmelluq.discord.lavaplayer.container.common.AacPacketRouter
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack
+import com.sedmelluq.discord.lavaplayer.natives.aac.AacDecoder
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext
+import mu.KotlinLogging
+import java.nio.ByteBuffer
 
 /**
  * Consumes AAC track data from a matroska file.
+ *
+ * @param context Configuration and output information for processing
+ * @param track   The MP4 audio track descriptor
  */
-public class MatroskaAacTrackConsumer implements MatroskaTrackConsumer {
-    private static final Logger log = LoggerFactory.getLogger(MpegAacTrackConsumer.class);
-
-    private final MatroskaFileTrack track;
-    private final ByteBuffer inputBuffer;
-    private final AacPacketRouter packetRouter;
-
-    /**
-     * @param context Configuration and output information for processing
-     * @param track   The MP4 audio track descriptor
-     */
-    public MatroskaAacTrackConsumer(AudioProcessingContext context, MatroskaFileTrack track) {
-        this.track = track;
-        this.inputBuffer = ByteBuffer.allocateDirect(4096);
-        this.packetRouter = new AacPacketRouter(context, this::configureDecoder);
+class MatroskaAacTrackConsumer(context: AudioProcessingContext, override val track: MatroskaFileTrack) :
+    MatroskaTrackConsumer {
+    companion object {
+        private val log = KotlinLogging.logger { }
     }
 
-    @Override
-    public void initialise() {
-        log.debug("Initialising AAC track with expected frequency {} and channel count {}.",
-            track.audio.samplingFrequency, track.audio.channels);
+    private val packetRouter = AacPacketRouter(context) { decoder -> configureDecoder(decoder) }
+    private val inputBuffer = ByteBuffer.allocateDirect(4096)
+
+    override fun initialise() {
+        log.debug { "Initialising AAC track with expected frequency ${track.audio.samplingFrequency} and channel count ${track.audio.channels}." }
     }
 
-    @Override
-    public MatroskaFileTrack getTrack() {
-        return track;
+    override fun seekPerformed(requestedTimecode: Long, providedTimecode: Long) {
+        packetRouter.seekPerformed(requestedTimecode, providedTimecode)
     }
 
-    @Override
-    public void seekPerformed(long requestedTimecode, long providedTimecode) {
-        packetRouter.seekPerformed(requestedTimecode, providedTimecode);
+    @Throws(InterruptedException::class)
+    override fun flush() {
+        packetRouter.flush()
     }
 
-    @Override
-    public void flush() throws InterruptedException {
-        packetRouter.flush();
-    }
-
-    @Override
-    public void consume(ByteBuffer data) throws InterruptedException {
+    @Throws(InterruptedException::class)
+    override fun consume(data: ByteBuffer) {
         while (data.hasRemaining()) {
-            int chunk = Math.min(data.remaining(), inputBuffer.capacity());
-            ByteBuffer chunkBuffer = data.duplicate();
-            chunkBuffer.limit(chunkBuffer.position() + chunk);
-
-            inputBuffer.clear();
-            inputBuffer.put(chunkBuffer);
-            inputBuffer.flip();
-
-            packetRouter.processInput(inputBuffer);
-
-            data.position(chunkBuffer.position());
+            val chunk = data.remaining().coerceAtMost(inputBuffer.capacity())
+            val chunkBuffer = data.duplicate()
+            chunkBuffer.limit(chunkBuffer.position() + chunk)
+            inputBuffer.clear()
+            inputBuffer.put(chunkBuffer)
+            inputBuffer.flip()
+            packetRouter.processInput(inputBuffer)
+            data.position(chunkBuffer.position())
         }
     }
 
-    @Override
-    public void close() {
-        packetRouter.close();
+    override fun close() {
+        packetRouter.close()
     }
 
-    private void configureDecoder(AacDecoder decoder) {
-        decoder.configure(track.codecPrivate);
+    private fun configureDecoder(decoder: AacDecoder) {
+        decoder.configure(track.codecPrivate)
     }
 }

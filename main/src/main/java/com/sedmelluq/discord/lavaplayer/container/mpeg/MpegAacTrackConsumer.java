@@ -30,7 +30,10 @@ public class MpegAacTrackConsumer implements MpegTrackConsumer {
     public MpegAacTrackConsumer(AudioProcessingContext context, MpegTrackInfo track) {
         this.track = track;
         this.inputBuffer = ByteBuffer.allocateDirect(4096);
-        this.packetRouter = new AacPacketRouter(context, this::configureDecoder);
+        this.packetRouter = new AacPacketRouter(context, (decoder) -> {
+            configureDecoder(decoder);
+            return null;
+        });
     }
 
     @Override

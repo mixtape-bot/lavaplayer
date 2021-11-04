@@ -1,22 +1,22 @@
-package com.sedmelluq.discord.lavaplayer.container.matroska;
+package com.sedmelluq.discord.lavaplayer.container.matroska
 
-import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack;
-
-import java.nio.ByteBuffer;
+import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack
+import java.lang.Exception
+import java.nio.ByteBuffer
 
 /**
  * Consumer for the file frames of a specific matroska file track
  */
-public interface MatroskaTrackConsumer extends AutoCloseable {
+interface MatroskaTrackConsumer : AutoCloseable {
     /**
-     * @return The associated matroska file track
+     * The associated matroska file track
      */
-    MatroskaFileTrack getTrack();
+    val track: MatroskaFileTrack
 
     /**
      * Initialise the consumer, called before first consume()
      */
-    void initialise();
+    fun initialise() {}
 
     /**
      * Indicates that the next frame is not a direct continuation of the previous one
@@ -24,14 +24,7 @@ public interface MatroskaTrackConsumer extends AutoCloseable {
      * @param requestedTimecode Timecode in milliseconds to which the seek was requested to
      * @param providedTimecode  Timecode in milliseconds to which the seek was actually performed to
      */
-    void seekPerformed(long requestedTimecode, long providedTimecode);
-
-    /**
-     * Indicates that no more input will come, all remaining buffers should be flushed
-     *
-     * @throws InterruptedException When interrupted externally (or for seek/stop).
-     */
-    void flush() throws InterruptedException;
+    fun seekPerformed(requestedTimecode: Long, providedTimecode: Long)
 
     /**
      * Consume one frame from the track
@@ -39,11 +32,22 @@ public interface MatroskaTrackConsumer extends AutoCloseable {
      * @param data The data of the frame
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void consume(ByteBuffer data) throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun consume(data: ByteBuffer)
+
+    /**
+     * Indicates that no more input will come, all remaining buffers should be flushed
+     *
+     * @throws InterruptedException When interrupted externally (or for seek/stop).
+     */
+    @Throws(InterruptedException::class)
+    fun flush() {
+    }
 
     /**
      * Already flushed, no more input coming. Free all resources.
      */
-    @Override
-    void close() throws Exception;
+    @Throws(Exception::class)
+    override fun close() {
+    }
 }

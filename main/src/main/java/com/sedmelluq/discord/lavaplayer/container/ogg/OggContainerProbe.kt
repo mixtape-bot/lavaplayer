@@ -1,68 +1,54 @@
-package com.sedmelluq.discord.lavaplayer.container.ogg;
+package com.sedmelluq.discord.lavaplayer.container.ogg
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
-import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
-import static com.sedmelluq.discord.lavaplayer.container.ogg.OggPacketInputStream.OGG_PAGE_HEADER;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import mu.KotlinLogging
+import java.io.IOException
 
 /**
  * Container detection probe for OGG stream.
  */
-public class OggContainerProbe implements MediaContainerProbe {
-    private static final Logger log = LoggerFactory.getLogger(OggContainerProbe.class);
+object OggContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger {  }
 
-    @Override
-    public String getName() {
-        return "ogg";
-    }
+    override val name: String = "ogg"
 
-    @Override
-    public boolean matchesHints(MediaContainerHints hints) {
-        return false;
-    }
-
-    @Override
-    public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream stream) throws IOException {
-        if (!checkNextBytes(stream, OGG_PAGE_HEADER)) {
-            return null;
+    @Throws(IOException::class)
+    override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
+        if (!MediaContainerDetection.checkNextBytes(inputStream, OggPacketInputStream.OGG_PAGE_HEADER)) {
+            return null
         }
 
-        log.debug("Track {} is an OGG stream.", reference.getIdentifier());
+        log.debug { "Track ${reference.identifier} is an OGG stream." }
 
-        AudioTrackInfoBuilder infoBuilder = AudioTrackInfoBuilder.create(reference, stream).setIsStream(true);
-
+        val infoBuilder = create(reference, inputStream).setIsStream(true)
         try {
-            collectStreamInformation(stream, infoBuilder);
-        } catch (Exception e) {
-            log.warn("Failed to collect additional information on OGG stream.", e);
+            collectStreamInformation(inputStream, infoBuilder)
+        } catch (e: Exception) {
+            log.warn(e) { "Failed to collect additional information on OGG stream." }
         }
 
-        return supportedFormat(this, null, infoBuilder.build());
+        return MediaContainerDetectionResult.supportedFormat(this, null, infoBuilder.build())
     }
 
-    @Override
-    public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-        return new OggAudioTrack(trackInfo, inputStream);
+    override fun matchesHints(hints: MediaContainerHints?): Boolean = false
+
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack {
+        return OggAudioTrack(trackInfo, inputStream)
     }
 
-    private void collectStreamInformation(SeekableInputStream stream, AudioTrackInfoBuilder infoBuilder) throws IOException {
-        OggPacketInputStream packetInputStream = new OggPacketInputStream(stream, false);
-        OggMetadata metadata = OggTrackLoader.loadMetadata(packetInputStream);
-
-        if (metadata != null) {
-            infoBuilder.apply(metadata);
-        }
+    @Throws(IOException::class)
+    private fun collectStreamInformation(stream: SeekableInputStream, infoBuilder: AudioTrackInfoBuilder) {
+        val packetInputStream = OggPacketInputStream(stream, false)
+        val metadata = OggTrackLoader.loadMetadata(packetInputStream)
+        metadata?.let { infoBuilder.apply(it) }
     }
 }

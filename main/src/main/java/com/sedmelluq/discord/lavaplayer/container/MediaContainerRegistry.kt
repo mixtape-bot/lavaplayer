@@ -7,7 +7,7 @@ open class MediaContainerRegistry(vararg val probes: MediaContainerProbe) {
 
         fun extended(vararg additional: MediaContainerProbe): MediaContainerRegistry {
             val probes = MediaContainer.asList()
-            probes.addAll(probes.intersect(additional.toList()))
+            probes.addAll(probes.intersect(additional.toSet()))
             return MediaContainerRegistry(probes)
         }
     }

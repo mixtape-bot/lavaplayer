@@ -1,20 +1,20 @@
-package com.sedmelluq.discord.lavaplayer.container.mpeg;
+package com.sedmelluq.discord.lavaplayer.container.mpeg
 
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.ReadableByteChannel
 
 /**
  * Consumer for the data of one MP4 track
  */
-public interface MpegTrackConsumer {
+interface MpegTrackConsumer {
     /**
-     * @return The associated MP4 track
+     * The associated MP4 track
      */
-    MpegTrackInfo getTrack();
+    val track: MpegTrackInfo
 
     /**
      * Initialise the consumer, called before first consume()
      */
-    void initialise();
+    fun initialise()
 
     /**
      * Indicates that the next frame is not a direct continuation of the previous one
@@ -22,14 +22,15 @@ public interface MpegTrackConsumer {
      * @param requestedTimecode Timecode in milliseconds to which the seek was requested to
      * @param providedTimecode  Timecode in milliseconds to which the seek was actually performed to
      */
-    void seekPerformed(long requestedTimecode, long providedTimecode);
+    fun seekPerformed(requestedTimecode: Long, providedTimecode: Long)
 
     /**
      * Indicates that no more input is coming. Flush any buffers to output.
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void flush() throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun flush()
 
     /**
      * Consume one chunk from the track
@@ -38,10 +39,11 @@ public interface MpegTrackConsumer {
      * @param length  Lenth of the chunk in bytes
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
-    void consume(ReadableByteChannel channel, int length) throws InterruptedException;
+    @Throws(InterruptedException::class)
+    fun consume(channel: ReadableByteChannel?, length: Int)
 
     /**
      * Free all resources
      */
-    void close();
+    fun close()
 }

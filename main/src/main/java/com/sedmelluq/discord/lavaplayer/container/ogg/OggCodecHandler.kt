@@ -1,15 +1,15 @@
-package com.sedmelluq.discord.lavaplayer.container.ogg;
+package com.sedmelluq.discord.lavaplayer.container.ogg
 
-import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
+import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker
+import java.io.IOException
 
-import java.io.IOException;
+interface OggCodecHandler {
+    fun isMatchingIdentifier(identifier: Int): Boolean
+    val maximumFirstPacketLength: Int
 
-public interface OggCodecHandler {
-    boolean isMatchingIdentifier(int identifier);
+    @Throws(IOException::class)
+    fun loadBlueprint(stream: OggPacketInputStream?, broker: DirectBufferStreamBroker?): OggTrackBlueprint?
 
-    int getMaximumFirstPacketLength();
-
-    OggTrackBlueprint loadBlueprint(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException;
-
-    OggMetadata loadMetadata(OggPacketInputStream stream, DirectBufferStreamBroker broker) throws IOException;
+    @Throws(IOException::class)
+    fun loadMetadata(stream: OggPacketInputStream?, broker: DirectBufferStreamBroker?): OggMetadata?
 }

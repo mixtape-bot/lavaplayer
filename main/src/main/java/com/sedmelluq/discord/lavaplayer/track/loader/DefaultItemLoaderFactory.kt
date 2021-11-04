@@ -18,7 +18,7 @@ open class DefaultItemLoaderFactory(internal val sourceRegistry: SourceRegistry)
             30L,
             TimeUnit.SECONDS,
             SynchronousQueue(false),
-            DaemonThreadFactory("lp item-loader")
+            DaemonThreadFactory("lavaplayer item-loader")
         )
     }
 

@@ -40,19 +40,18 @@ class AacDecoder : NativeResourceHolder() {
             "Cannot process a header larger than size 8"
         }
 
-        var buffer: Long = 0
-        for (i in config.indices) {
-            buffer = buffer or (config[i].toLong() shl (i shl 3))
+        val buf = config.foldIndexed(0L) { i, buf, byte ->
+            buf or (byte.toLong() shl (i shl 3))
         }
 
-        configureRaw(buffer)
+        configureRaw(buf)
     }
 
     @Synchronized
     private fun configureRaw(buffer: Long) {
-        var buffer = buffer
         checkNotReleased()
 
+        var buffer = buffer
         if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
             buffer = java.lang.Long.reverseBytes(buffer)
         }
@@ -103,14 +102,10 @@ class AacDecoder : NativeResourceHolder() {
     @Synchronized
     fun decode(buffer: ShortBuffer, flush: Boolean): Boolean {
         checkNotReleased()
-        require(buffer.isDirect) {
-            "Buffer argument must be a direct buffer."
-        }
+        require(buffer.isDirect) { "Buffer argument must be a direct buffer." }
 
         val result = library.decode(instance, buffer, buffer.capacity(), flush)
-        check(!(result != 0 && result != ERROR_NOT_ENOUGH_BITS)) {
-            "Error from decoder $result"
-        }
+        check(result == 0 || result == ERROR_NOT_ENOUGH_BITS) { "Error from decoder $result" }
 
         return result == 0
     }
@@ -128,20 +123,16 @@ class AacDecoder : NativeResourceHolder() {
         if (result == ERROR_NOT_ENOUGH_BITS) {
             return null
         } else {
-            check(result == ERROR_OUTPUT_BUFFER_TOO_SMALL) {
-                "Expected decoding to halt, got: $result"
-            }
+            check(result == ERROR_OUTPUT_BUFFER_TOO_SMALL) { "Expected decoding to halt, got: $result" }
         }
 
         val combinedValue = library.getStreamInfo(instance)
-        check(combinedValue != 0L) {
-            "Native library failed to detect stream info."
-        }
+        check(combinedValue != 0L) { "Native library failed to detect stream info." }
 
         return StreamInfo(
-            (combinedValue ushr 32).toInt(),
-            (combinedValue and 0xFFFF).toInt(),
-            (combinedValue ushr 16 and 0xFFFF).toInt()
+            sampleRate = (combinedValue ushr 32).toInt(),
+            channels = (combinedValue and 0xFFFF).toInt(),
+            frameSize = (combinedValue ushr 16 and 0xFFFF).toInt()
         )
     }
 
@@ -156,7 +147,7 @@ class AacDecoder : NativeResourceHolder() {
      * @param channels   Channel count (adjusted to PS) of the current stream.
      * @param frameSize  Number of samples per channel per frame.
      */
-    class StreamInfo(
+    data class StreamInfo(
         /**
          * Sample rate (adjusted to SBR) of the current stream.
          */

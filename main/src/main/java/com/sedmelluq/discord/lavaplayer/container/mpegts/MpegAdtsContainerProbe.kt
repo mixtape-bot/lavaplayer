@@ -1,75 +1,53 @@
-package com.sedmelluq.discord.lavaplayer.container.mpegts;
+package com.sedmelluq.discord.lavaplayer.container.mpegts
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
-import com.sedmelluq.discord.lavaplayer.container.adts.AdtsStreamReader;
-import com.sedmelluq.discord.lavaplayer.tools.io.SavedHeadSeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.container.adts.AdtsStreamReader
+import com.sedmelluq.discord.lavaplayer.tools.io.SavedHeadSeekableInputStream
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import mu.KotlinLogging
+import java.io.IOException
 
-import java.io.IOException;
+object MpegAdtsContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger {  }
 
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
-import static com.sedmelluq.discord.lavaplayer.container.mpegts.MpegTsElementaryInputStream.ADTS_ELEMENTARY_STREAM;
+    override val name: String = "mpegts-adts"
 
-public class MpegAdtsContainerProbe implements MediaContainerProbe {
-    private static final Logger log = LoggerFactory.getLogger(MpegAdtsContainerProbe.class);
+    @Throws(IOException::class)
+    override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
+        val head = if (inputStream is SavedHeadSeekableInputStream) inputStream else null
+        head?.setAllowDirectReads(false)
 
-    @Override
-    public String getName() {
-        return "mpegts-adts";
-    }
-
-    @Override
-    public boolean matchesHints(MediaContainerHints hints) {
-        return "ts".equalsIgnoreCase(hints.fileExtension);
-    }
-
-    @Override
-    public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream)
-        throws IOException {
-
-        SavedHeadSeekableInputStream head = inputStream instanceof SavedHeadSeekableInputStream ?
-            (SavedHeadSeekableInputStream) inputStream : null;
-
-        if (head != null) {
-            head.setAllowDirectReads(false);
-        }
-
-        MpegTsElementaryInputStream tsStream = new MpegTsElementaryInputStream(inputStream, ADTS_ELEMENTARY_STREAM);
-        PesPacketInputStream pesStream = new PesPacketInputStream(tsStream);
-        AdtsStreamReader reader = new AdtsStreamReader(pesStream);
-
+        val tsStream = MpegTsElementaryInputStream(inputStream, MpegTsElementaryInputStream.ADTS_ELEMENTARY_STREAM)
+        val pesStream = PesPacketInputStream(tsStream)
+        val reader = AdtsStreamReader(pesStream)
         try {
             if (reader.findPacketHeader() != null) {
-                log.debug("Track {} is an MPEG-TS stream with an ADTS track.", reference.getIdentifier());
+                log.debug { "Track ${reference.identifier} is an MPEG-TS stream with an ADTS track." }
+                val trackInfo = create(reference, inputStream)
+                    .apply(tsStream.loadedMetadata)
+                    .build()
 
-                return supportedFormat(this, null,
-                    AudioTrackInfoBuilder.create(reference, inputStream)
-                        .apply(tsStream.getLoadedMetadata())
-                        .build()
-                );
+                return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
             }
-        } catch (IndexOutOfBoundsException ignored) {
+        } catch (ignored: IndexOutOfBoundsException) {
             // TS stream read too far and still did not find required elementary stream - SavedHeadSeekableInputStream throws
             // this because we disabled reads past the loaded "head".
         } finally {
-            if (head != null) {
-                head.setAllowDirectReads(true);
-            }
+            head?.setAllowDirectReads(true)
         }
 
-        return null;
+        return null
     }
 
-    @Override
-    public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-        return new MpegAdtsAudioTrack(trackInfo, inputStream);
-    }
+    override fun matchesHints(hints: MediaContainerHints?): Boolean =
+        "ts".equals(hints!!.fileExtension, ignoreCase = true)
+
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        MpegAdtsAudioTrack(trackInfo, inputStream)
 }

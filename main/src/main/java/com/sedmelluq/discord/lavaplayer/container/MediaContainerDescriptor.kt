@@ -5,7 +5,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 
 data class MediaContainerDescriptor(val probe: MediaContainerProbe, val parameters: String?) {
-    fun createTrack(trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack {
-        return probe.createTrack(parameters, trackInfo, inputStream)
-    }
+    fun createTrack(trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        probe.createTrack(parameters, trackInfo, inputStream)
 }

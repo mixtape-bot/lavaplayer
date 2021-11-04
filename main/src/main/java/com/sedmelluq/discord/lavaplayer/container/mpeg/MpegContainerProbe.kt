@@ -15,18 +15,11 @@ import java.io.IOException
 /**
  * Container detection probe for MP4 format.
  */
-class MpegContainerProbe : MediaContainerProbe {
-    companion object {
-        private val log = KotlinLogging.logger {  }
-        private val ISO_TAG = intArrayOf(0x00, 0x00, 0x00, -1, 0x66, 0x74, 0x79, 0x70)
-    }
+object MpegContainerProbe : MediaContainerProbe {
+    private val log = KotlinLogging.logger { }
+    private val ISO_TAG = intArrayOf(0x00, 0x00, 0x00, -1, 0x66, 0x74, 0x79, 0x70)
 
-    override val name: String
-        get() = "mp4"
-
-    override fun matchesHints(hints: MediaContainerHints?): Boolean {
-        return false
-    }
+    override val name: String = "mp4"
 
     @Throws(IOException::class)
     override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
@@ -39,7 +32,7 @@ class MpegContainerProbe : MediaContainerProbe {
         file.parseHeaders()
 
         val audioTrack = getSupportedAudioTrack(file)
-            ?: return MediaContainerDetectionResult.unsupportedFormat(this, "No supported audio format in the MP4 file.")
+            ?: return MediaContainerDetectionResult.unsupportedFormat(this, "No supported audio formats in MP4 file.")
 
         val fileReader = file.loadReader(MpegNoopTrackConsumer(audioTrack))
             ?: return MediaContainerDetectionResult.unsupportedFormat(this, "MP4 file uses an unsupported format.")
@@ -53,9 +46,10 @@ class MpegContainerProbe : MediaContainerProbe {
         return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo.build())
     }
 
-    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack {
-        return MpegAudioTrack(trackInfo, inputStream)
-    }
+    override fun matchesHints(hints: MediaContainerHints?): Boolean = false
+
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+        MpegAudioTrack(trackInfo, inputStream)
 
     private fun getSupportedAudioTrack(file: MpegFileLoader): MpegTrackInfo? {
         return file.trackList.firstOrNull { it.handler == "soun" && it.codecName == "mp4a" }

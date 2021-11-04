@@ -21,10 +21,10 @@ class WavAudioTrack(trackInfo: AudioTrackInfo, private val stream: SeekableInput
     override fun process(executor: LocalAudioTrackExecutor) {
         val trackProvider = WavFileLoader(stream).loadTrack(executor.processingContext)
         try {
-            log.debug("Starting to play WAV track {}", identifier)
+            log.debug { "Starting to play WAV track $identifier" }
             executor.executeProcessingLoop(
-                { trackProvider.provideFrames() },
-                { trackProvider.seekToTimecode(it) }
+                readExecutor = { trackProvider.provideFrames() },
+                seekExecutor = { trackProvider.seekToTimecode(it) }
             )
         } finally {
             trackProvider.close()

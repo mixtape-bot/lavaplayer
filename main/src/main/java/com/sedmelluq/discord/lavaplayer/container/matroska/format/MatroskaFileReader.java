@@ -86,7 +86,7 @@ public class MatroskaFileReader {
      */
     public int asInteger(MatroskaElement element) throws IOException {
         if (element.is(MatroskaElementType.DataType.UNSIGNED_INTEGER)) {
-            long value = MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.dataSize, null);
+            long value = MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.getDataSize(), null);
 
             if (value < 0 || value > Integer.MAX_VALUE) {
                 throw new ArithmeticException("Cannot convert unsigned value to integer.");
@@ -94,7 +94,7 @@ public class MatroskaFileReader {
                 return (int) value;
             }
         } else if (element.is(MatroskaElementType.DataType.SIGNED_INTEGER)) {
-            return Math.toIntExact(MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.dataSize, MatroskaEbmlReader.Type.SIGNED));
+            return Math.toIntExact(MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.getDataSize(), MatroskaEbmlReader.Type.SIGNED));
         } else {
             throw new IllegalArgumentException("Not an integer element.");
         }
@@ -107,9 +107,9 @@ public class MatroskaFileReader {
      */
     public long asLong(MatroskaElement element) throws IOException {
         if (element.is(MatroskaElementType.DataType.UNSIGNED_INTEGER)) {
-            return MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.dataSize, null);
+            return MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.getDataSize(), null);
         } else if (element.is(MatroskaElementType.DataType.SIGNED_INTEGER)) {
-            return MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.dataSize, MatroskaEbmlReader.Type.SIGNED);
+            return MatroskaEbmlReader.readFixedSizeEbmlInteger(dataInput, element.getDataSize(), MatroskaEbmlReader.Type.SIGNED);
         } else {
             throw new IllegalArgumentException("Not an integer element.");
         }
@@ -122,9 +122,9 @@ public class MatroskaFileReader {
      */
     public float asFloat(MatroskaElement element) throws IOException {
         if (element.is(MatroskaElementType.DataType.FLOAT)) {
-            if (element.dataSize == 4) {
+            if (element.getDataSize() == 4) {
                 return dataInput.readFloat();
-            } else if (element.dataSize == 8) {
+            } else if (element.getDataSize() == 8) {
                 return (float) dataInput.readDouble();
             } else {
                 throw new IllegalStateException("Float element has invalid size.");
@@ -141,9 +141,9 @@ public class MatroskaFileReader {
      */
     public double asDouble(MatroskaElement element) throws IOException {
         if (element.is(MatroskaElementType.DataType.FLOAT)) {
-            if (element.dataSize == 4) {
+            if (element.getDataSize() == 4) {
                 return dataInput.readFloat();
-            } else if (element.dataSize == 8) {
+            } else if (element.getDataSize() == 8) {
                 return dataInput.readDouble();
             } else {
                 throw new IllegalStateException("Float element has invalid size.");
@@ -174,7 +174,7 @@ public class MatroskaFileReader {
      * @throws IOException On read error
      */
     public byte[] asBytes(MatroskaElement element) throws IOException {
-        byte[] bytes = new byte[element.dataSize];
+        byte[] bytes = new byte[element.getDataSize()];
         dataInput.readFully(bytes);
         return bytes;
     }
