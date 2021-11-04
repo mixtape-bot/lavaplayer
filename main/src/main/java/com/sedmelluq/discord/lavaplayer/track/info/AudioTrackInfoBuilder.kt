@@ -36,13 +36,13 @@ class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
             title = UNKNOWN_TITLE
             length = DURATION_MS_UNKNOWN
 
+            apply(reference)
             if (stream != null) {
                 for (provider in stream.trackInfoProviders) {
                     apply(provider)
                 }
             }
 
-            apply(reference)
             apply(build)
         }
 
@@ -56,43 +56,25 @@ class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
     }
 
     override var title: String? = null
+        set(value) { field = value ?: field }
+
     override var author: String? = null
+        set(value) { field = value ?: field }
+
     override var length: Long? = null
+        set(value) { field = value ?: field }
+
     override var identifier: String? = null
+        set(value) { field = value ?: field }
+
     override var uri: String? = null
+        set(value) { field = value ?: field }
+
     override var artworkUrl: String? = null
+        set(value) { field = value ?: field }
 
     var isStream: Boolean? = null
-
-//    fun setTitle(value: String?): AudioTrackInfoBuilder {
-//        title = DataFormatTools.defaultOnNull(value, title)
-//        return this
-//    }
-//
-//    fun setAuthor(value: String?): AudioTrackInfoBuilder {
-//        author = DataFormatTools.defaultOnNull(value, author)
-//        return this
-//    }
-//
-//    fun setLength(value: Long?): AudioTrackInfoBuilder {
-//        length = DataFormatTools.defaultOnNull(value, length)
-//        return this
-//    }
-//
-//    fun setIdentifier(value: String?): AudioTrackInfoBuilder {
-//        identifier = DataFormatTools.defaultOnNull(value, identifier)
-//        return this
-//    }
-//
-//    fun setUri(value: String?): AudioTrackInfoBuilder {
-//        uri = DataFormatTools.defaultOnNull(value, uri)
-//        return this
-//    }
-//
-//    fun setArtworkUrl(artworkUrl: String?): AudioTrackInfoBuilder {
-//        this.artworkUrl = artworkUrl
-//        return this
-//    }
+        set(value) { field = value ?: field }
 
     fun setIsStream(stream: Boolean?): AudioTrackInfoBuilder {
         isStream = stream

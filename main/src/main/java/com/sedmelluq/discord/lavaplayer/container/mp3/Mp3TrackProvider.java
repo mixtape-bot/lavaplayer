@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,7 +26,7 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMP
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
-public class Mp3TrackProvider implements AudioTrackInfoProvider {
+public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable {
     private static final byte[] IDV3_TAG = new byte[]{0x49, 0x44, 0x33};
     private static final int IDV3_FLAG_EXTENDED = 0x40;
 
@@ -181,6 +182,7 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider {
     /**
      * Closes resources.
      */
+    @Override
     public void close() {
         if (downstream != null) {
             downstream.close();
