@@ -1,22 +1,14 @@
-package com.sedmelluq.discord.lavaplayer.container.flac;
+package com.sedmelluq.discord.lavaplayer.container.flac
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.DataInput;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
-import static com.sedmelluq.discord.lavaplayer.container.flac.FlacMetadataHeader.BLOCK_COMMENT;
-import static com.sedmelluq.discord.lavaplayer.container.flac.FlacMetadataHeader.BLOCK_SEEKTABLE;
+import org.apache.commons.io.IOUtils
+import java.io.DataInput
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * Handles reading one FLAC metadata blocks.
  */
-public class FlacMetadataReader {
-    private static final Charset CHARSET = StandardCharsets.UTF_8;
-
+object FlacMetadataReader {
     /**
      * Reads FLAC stream info metadata block.
      *
@@ -24,24 +16,30 @@ public class FlacMetadataReader {
      * @return Stream information
      * @throws IOException On read error
      */
-    public static FlacStreamInfo readStreamInfoBlock(DataInput dataInput) throws IOException {
-        FlacMetadataHeader header = readMetadataHeader(dataInput);
-
-        if (header.blockType != 0) {
-            throw new IllegalStateException("Wrong metadata block, should be stream info.");
-        } else if (header.blockLength != FlacStreamInfo.LENGTH) {
-            throw new IllegalStateException("Invalid stream info block size.");
+    @JvmStatic
+    @Throws(IOException::class)
+    fun readStreamInfoBlock(dataInput: DataInput): FlacStreamInfo {
+        val header = readMetadataHeader(dataInput)
+        check(header.blockType == FlacMetadataBlockType.StreamInfo) {
+            "Wrong metadata block, should be stream info."
         }
 
-        byte[] streamInfoData = new byte[FlacStreamInfo.LENGTH];
-        dataInput.readFully(streamInfoData);
-        return new FlacStreamInfo(streamInfoData, !header.isLastBlock);
+        check(header.blockLength == FlacStreamInfo.LENGTH) {
+            "Invalid stream info block size."
+        }
+
+        val streamInfoData = ByteArray(FlacStreamInfo.LENGTH)
+        dataInput.readFully(streamInfoData)
+
+        return FlacStreamInfo(streamInfoData, !header.isLastBlock)
     }
 
-    private static FlacMetadataHeader readMetadataHeader(DataInput dataInput) throws IOException {
-        byte[] headerBytes = new byte[FlacMetadataHeader.LENGTH];
-        dataInput.readFully(headerBytes);
-        return new FlacMetadataHeader(headerBytes);
+    @Throws(IOException::class)
+    private fun readMetadataHeader(dataInput: DataInput): FlacMetadataHeader {
+        val headerBytes = ByteArray(FlacMetadataHeader.LENGTH)
+        dataInput.readFully(headerBytes)
+
+        return FlacMetadataHeader(headerBytes)
     }
 
     /**
@@ -51,56 +49,60 @@ public class FlacMetadataReader {
      * @return True if there are more metadata blocks available
      * @throws IOException On read error
      */
-    public static boolean readMetadataBlock(DataInput dataInput, InputStream inputStream, FlacTrackInfoBuilder trackInfoBuilder) throws IOException {
-        FlacMetadataHeader header = readMetadataHeader(dataInput);
+    @JvmStatic
+    @Throws(IOException::class)
+    fun readMetadataBlock(
+        dataInput: DataInput,
+        inputStream: InputStream,
+        trackInfoBuilder: FlacTrackInfoBuilder
+    ): Boolean {
+        val header = readMetadataHeader(dataInput)
+        println(header)
 
-        if (header.blockType == BLOCK_SEEKTABLE) {
-            readSeekTableBlock(dataInput, trackInfoBuilder, header.blockLength);
-        } else if (header.blockType == BLOCK_COMMENT) {
-            readCommentBlock(dataInput, inputStream, trackInfoBuilder);
-        } else {
-            IOUtils.skipFully(inputStream, header.blockLength);
+        when (header.blockType) {
+            is FlacMetadataBlockType.Seektable -> readSeekTableBlock(dataInput, trackInfoBuilder, header.blockLength)
+            is FlacMetadataBlockType.VorbisComment -> readCommentBlock(dataInput, inputStream, trackInfoBuilder)
+            else -> IOUtils.skipFully(inputStream, header.blockLength.toLong())
         }
 
-        return !header.isLastBlock;
+        return !header.isLastBlock
     }
 
-    private static void readCommentBlock(DataInput dataInput, InputStream inputStream, FlacTrackInfoBuilder trackInfoBuilder) throws IOException {
-        int vendorLength = Integer.reverseBytes(dataInput.readInt());
-        IOUtils.skipFully(inputStream, vendorLength);
+    @Throws(IOException::class)
+    private fun readCommentBlock(dataInput: DataInput, inputStream: InputStream, trackInfoBuilder: FlacTrackInfoBuilder) {
+        val vendorLength = Integer.reverseBytes(dataInput.readInt())
+        IOUtils.skipFully(inputStream, vendorLength.toLong())
 
-        int listLength = Integer.reverseBytes(dataInput.readInt());
+        val listLength = Integer.reverseBytes(dataInput.readInt())
+        for (i in 0 until listLength) {
+            val itemLength = Integer.reverseBytes(dataInput.readInt())
+            val textBytes = ByteArray(itemLength)
+            dataInput.readFully(textBytes)
 
-        for (int i = 0; i < listLength; i++) {
-            int itemLength = Integer.reverseBytes(dataInput.readInt());
-
-            byte[] textBytes = new byte[itemLength];
-            dataInput.readFully(textBytes);
-
-            String text = new String(textBytes, 0, textBytes.length, CHARSET);
-            String[] keyAndValue = text.split("=", 2);
-
-            if (keyAndValue.length > 1) {
-                trackInfoBuilder.addTag(keyAndValue[0].toUpperCase(), keyAndValue[1]);
+            val text = textBytes.decodeToString()
+            val keyAndValue = text.split("=".toRegex(), 2).toTypedArray()
+            if (keyAndValue.size > 1) {
+                trackInfoBuilder.addTag(keyAndValue[0].uppercase(), keyAndValue[1])
             }
         }
     }
 
-    private static void readSeekTableBlock(DataInput dataInput, FlacTrackInfoBuilder trackInfoBuilder, int length) throws IOException {
-        FlacSeekPoint[] seekPoints = new FlacSeekPoint[length / FlacSeekPoint.LENGTH];
-        int seekPointCount = 0;
-
-        for (int i = 0; i < seekPoints.length; i++) {
-            long sampleIndex = dataInput.readLong();
-            long byteOffset = dataInput.readLong();
-            int sampleCount = dataInput.readUnsignedShort();
-
-            seekPoints[i] = new FlacSeekPoint(sampleIndex, byteOffset, sampleCount);
-            if (sampleIndex != -1) {
-                seekPointCount = i + 1;
+    @Throws(IOException::class)
+    private fun readSeekTableBlock(dataInput: DataInput, trackInfoBuilder: FlacTrackInfoBuilder, length: Int) {
+        var seekPointCount = 0
+        val seekPoints = List(length / FlacSeekPoint.LENGTH) { i ->
+            val sampleIndex = dataInput.readLong()
+            if (sampleIndex != -1L) {
+                seekPointCount = i + 1
             }
+
+            FlacSeekPoint(
+                sampleIndex = sampleIndex,
+                byteOffset = dataInput.readLong(),
+                sampleCount = dataInput.readUnsignedShort()
+            )
         }
 
-        trackInfoBuilder.setSeekPoints(seekPoints, seekPointCount);
+        trackInfoBuilder.setSeekPoints(seekPoints, seekPointCount)
     }
 }

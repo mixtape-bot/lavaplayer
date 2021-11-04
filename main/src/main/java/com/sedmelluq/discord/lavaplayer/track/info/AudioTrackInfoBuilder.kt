@@ -42,8 +42,8 @@ class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
                 }
             }
 
-            apply(build)
             apply(reference)
+            apply(build)
         }
 
         /**
@@ -104,9 +104,7 @@ class AudioTrackInfoBuilder internal constructor() : AudioTrackInfoProvider {
      * @return this
      */
     fun apply(provider: AudioTrackInfoProvider?): AudioTrackInfoBuilder {
-        return if (provider == null) {
-            this
-        } else apply {
+        return if (provider == null) this else apply {
             title = provider.title
             author = provider.author
             length = provider.length

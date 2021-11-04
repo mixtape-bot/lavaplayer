@@ -46,10 +46,7 @@ interface SourceRegistry {
          */
         @JvmOverloads
         @JvmStatic
-        fun registerLocalSource(
-            sourceRegistry: SourceRegistry,
-            containerRegistry: MediaContainerRegistry = MediaContainerRegistry.DEFAULT_REGISTRY
-        ) {
+        fun registerLocalSources(sourceRegistry: SourceRegistry, containerRegistry: MediaContainerRegistry = MediaContainerRegistry.DEFAULT_REGISTRY) {
             sourceRegistry.registerSourceManager(LocalItemSourceManager(containerRegistry))
         }
     }

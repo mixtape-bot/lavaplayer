@@ -1,41 +1,43 @@
-package com.sedmelluq.discord.lavaplayer.container.flac;
+package com.sedmelluq.discord.lavaplayer.container.flac
 
-import com.sedmelluq.discord.lavaplayer.tools.io.BitBufferReader;
-
-import java.nio.ByteBuffer;
+import com.sedmelluq.discord.lavaplayer.container.flac.FlacMetadataBlockType.Companion.find
+import com.sedmelluq.discord.lavaplayer.tools.io.BitBufferReader
+import java.nio.ByteBuffer
 
 /**
  * A header of FLAC metadata.
+ *
+ * @param data The raw header data
  */
-public class FlacMetadataHeader {
-    public static final int LENGTH = 4;
-
-    public static final int BLOCK_SEEKTABLE = 3;
-    public static final int BLOCK_COMMENT = 4;
+class FlacMetadataHeader(data: ByteArray?) {
+    companion object {
+        const val LENGTH = 4
+    }
 
     /**
      * If this header is for the last metadata block. If this is true, then the current metadata block is followed by
      * frames.
      */
-    public final boolean isLastBlock;
+    val isLastBlock: Boolean
 
     /**
-     * Block type, see: https://xiph.org/flac/format.html#metadata_block_header
+     * The block type of this header.
      */
-    public final int blockType;
+    val blockType: FlacMetadataBlockType
 
     /**
      * Length of the block, current header excluded
      */
-    public final int blockLength;
+    val blockLength: Int
 
-    /**
-     * @param data The raw header data
-     */
-    public FlacMetadataHeader(byte[] data) {
-        BitBufferReader bitReader = new BitBufferReader(ByteBuffer.wrap(data));
-        isLastBlock = bitReader.asInteger(1) == 1;
-        blockType = bitReader.asInteger(7);
-        blockLength = bitReader.asInteger(24);
+    init {
+        val bitReader = BitBufferReader(ByteBuffer.wrap(data))
+        isLastBlock = bitReader.asInteger(1) == 1
+        blockType = find(bitReader.asInteger(7))
+        blockLength = bitReader.asInteger(24)
+    }
+
+    override fun toString(): String {
+        return "FlacMetadataHeader(isLastBlock=$isLastBlock, blockType=$blockType, blockLength=$blockLength)"
     }
 }

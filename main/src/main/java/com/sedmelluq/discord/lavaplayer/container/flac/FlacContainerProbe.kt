@@ -1,61 +1,60 @@
-package com.sedmelluq.discord.lavaplayer.container.flac;
+package com.sedmelluq.discord.lavaplayer.container.flac
 
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe;
-import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.checkNextBytes;
-import static com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult.supportedFormat;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import mu.KotlinLogging
+import org.slf4j.LoggerFactory
+import java.io.IOException
 
 /**
  * Container detection probe for MP3 format.
  */
-public class FlacContainerProbe implements MediaContainerProbe {
-    private static final Logger log = LoggerFactory.getLogger(FlacContainerProbe.class);
+class FlacContainerProbe : MediaContainerProbe {
+    override val name: String
+        get() = "flac"
 
-    private static final String TITLE_TAG = "TITLE";
-    private static final String ARTIST_TAG = "ARTIST";
-
-    @Override
-    public String getName() {
-        return "flac";
+    override fun matchesHints(hints: MediaContainerHints?): Boolean {
+        return false
     }
 
-    @Override
-    public boolean matchesHints(MediaContainerHints hints) {
-        return false;
-    }
-
-    @Override
-    public MediaContainerDetectionResult probe(AudioReference reference, SeekableInputStream inputStream) throws IOException {
-        if (!checkNextBytes(inputStream, FlacFileLoader.FLAC_CC)) {
-            return null;
+    @Throws(IOException::class)
+    override fun probe(reference: AudioReference, inputStream: SeekableInputStream): MediaContainerDetectionResult? {
+        if (!MediaContainerDetection.checkNextBytes(inputStream, FlacFileLoader.FLAC_CC)) {
+            return null
         }
 
-        log.debug("Track {} is a FLAC file.", reference.getIdentifier());
+        log.debug { "Track ${reference.identifier} is a FLAC file." }
 
-        FlacTrackInfo fileInfo = new FlacFileLoader(inputStream).parseHeaders();
-        AudioTrackInfo trackInfo = AudioTrackInfoBuilder.create(reference, inputStream, builder -> {
-            builder.setTitle(fileInfo.tags.get(TITLE_TAG));
-            builder.setAuthor(fileInfo.tags.get(ARTIST_TAG));
-            builder.setLength(fileInfo.duration);
-            return null;
-        }).build();
+        val fileInfo = FlacFileLoader(inputStream).parseHeaders()
+        println(reference)
+        println(fileInfo)
 
-        return supportedFormat(this, null, trackInfo);
+        val trackInfo = create(reference, inputStream) {
+            title = fileInfo.tags[TITLE_TAG] ?: UNKNOWN_TITLE
+            author = fileInfo.tags[ARTIST_TAG] ?: UNKNOWN_ARTIST
+            length = fileInfo.duration
+        }.build()
+
+        return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
     }
 
-    @Override
-    public AudioTrack createTrack(String parameters, AudioTrackInfo trackInfo, SeekableInputStream inputStream) {
-        return new FlacAudioTrack(trackInfo, inputStream);
+    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack {
+        return FlacAudioTrack(trackInfo, inputStream)
+    }
+
+    companion object {
+        private const val TITLE_TAG = "TITLE"
+        private const val ARTIST_TAG = "ARTIST"
+
+        private val log = KotlinLogging.logger { }
     }
 }

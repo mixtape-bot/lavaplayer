@@ -10,7 +10,7 @@ import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider
  * @param identifier The identifier of the other item.
  * @param title      The title of the other item, if known.
  */
-class AudioReference @JvmOverloads constructor(
+data class AudioReference @JvmOverloads constructor(
     /**
      * The identifier of the other item.
      */

@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.flac
 /**
  * All relevant information about a FLAC track from its metadata.
  */
-class FlacTrackInfo(
+data class FlacTrackInfo(
     /**
      * FLAC stream information.
      */
@@ -11,7 +11,7 @@ class FlacTrackInfo(
     /**
      * An array of seek points.
      */
-    @JvmField val seekPoints: Array<FlacSeekPoint>,
+    @JvmField val seekPoints: List<FlacSeekPoint>,
     /**
      * The actual number of seek points that are not placeholders. The end of the array may contain empty seek points,
      * which is why this value should be used to determine how far into the array to look.

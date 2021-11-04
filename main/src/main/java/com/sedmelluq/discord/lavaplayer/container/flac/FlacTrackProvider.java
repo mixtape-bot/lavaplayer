@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A provider of audio frames from a FLAC track.
@@ -88,21 +89,21 @@ public class FlacTrackProvider {
         return binarySearchSeekPoints(info.seekPoints, info.seekPointCount, targetSampleIndex);
     }
 
-    private FlacSeekPoint binarySearchSeekPoints(FlacSeekPoint[] seekPoints, int length, long targetSampleIndex) {
+    private FlacSeekPoint binarySearchSeekPoints(List<FlacSeekPoint> seekPoints, int length, long targetSampleIndex) {
         int low = 0;
         int high = length - 1;
 
         while (high > low) {
             int mid = (low + high + 1) / 2;
 
-            if (info.seekPoints[mid].sampleIndex > targetSampleIndex) {
+            if (info.seekPoints.get(mid).sampleIndex > targetSampleIndex) {
                 high = mid - 1;
             } else {
                 low = mid;
             }
         }
 
-        return seekPoints[low];
+        return seekPoints.get(low);
     }
 
     /**

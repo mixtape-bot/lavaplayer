@@ -49,6 +49,7 @@ public class BotApplicationManager extends ListenerAdapter {
         playerManager.getConfiguration().useFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
 
         registerRemoteSources(playerManager);
+        registerLocalSources(playerManager);
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
 

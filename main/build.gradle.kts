@@ -27,10 +27,6 @@ dependencies {
     testImplementation("ch.qos.logback:logback-classic:1.2.6")
 }
 
-tasks.jar {
-    exclude("natives")
-}
-
 val updateVersion by tasks.registering {
     File("$projectDir/src/main/resources/com/sedmelluq/discord/lavaplayer/tools/version.txt").let {
         it.parentFile.mkdirs()
