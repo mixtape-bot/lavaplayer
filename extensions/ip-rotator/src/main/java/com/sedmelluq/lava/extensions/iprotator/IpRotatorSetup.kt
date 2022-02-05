@@ -5,16 +5,16 @@ import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpClientBuilder
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable
 import com.sedmelluq.discord.lavaplayer.tools.http.SimpleHttpClientConnectionManager
 
-abstract class IpRotatorSetup(protected val routePlanner: AbstractRoutePlanner) {
+public abstract class IpRotatorSetup(protected val routePlanner: AbstractRoutePlanner) {
     /**
      * The retry handler to use.
      */
-    abstract val retryHandler: IpRotatorRetryHandler
+    public abstract val retryHandler: IpRotatorRetryHandler
 
     /**
      * Setup ip-rotation.
      */
-    abstract fun setup()
+    public abstract fun setup()
 
     /**
      * Applies this ip-rotator-setup to the supplied list of [ExtendedHttpConfigurable]

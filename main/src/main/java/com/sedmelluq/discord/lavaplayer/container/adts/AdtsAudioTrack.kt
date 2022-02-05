@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.container.adts
 
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import java.io.InputStream
 
@@ -18,13 +18,11 @@ class AdtsAudioTrack(trackInfo: AudioTrackInfo?, private val inputStream: InputS
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
-        val provider = AdtsStreamProvider(inputStream, executor.processingContext)
-        try {
-            log.debug { "Starting to play ADTS stream $identifier" }
-            executor.executeProcessingLoop({ provider.provideFrames() }, null)
-        } finally {
-            provider.close()
-        }
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
+        AdtsStreamProvider(inputStream, executor.processingContext)
+            .use { provider ->
+                log.debug { "Starting to play ADTS stream $identifier" }
+                executor.executeProcessingLoop({ provider.provideFrames() }, null)
+            }
     }
 }

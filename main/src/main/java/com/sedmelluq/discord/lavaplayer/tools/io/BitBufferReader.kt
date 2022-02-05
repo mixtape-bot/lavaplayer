@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.tools.io
 
 import java.io.IOException
 import java.nio.ByteBuffer
-import kotlin.experimental.and
 
 /**
  * Helper for reading a specific number of bits at a time from a byte buffer.
@@ -25,7 +24,5 @@ class BitBufferReader(private val buffer: ByteBuffer) : BitStreamReader(null) {
         }
     }
 
-    override fun readByte(): Int {
-        return (buffer.get() and 0xff.toByte()).toInt()
-    }
+    override fun readByte(): Int = buffer.get().toInt() and 0xFF
 }

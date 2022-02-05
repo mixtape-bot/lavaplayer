@@ -1,14 +1,15 @@
 package com.sedmelluq.discord.lavaplayer.source.getyarn
 
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.io.*
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools.NoRedirectsStrategy
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
 import org.jsoup.Jsoup
@@ -20,6 +21,10 @@ import java.util.regex.Pattern
  * Audio source manager which detects getyarn.io tracks by URL.
  */
 class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
+    companion object {
+        private val GETYARN_REGEX = Pattern.compile("(?:http://|https://(?:www\\.)?)?getyarn\\.io/yarn-clip/(.*)")
+    }
+
     private val httpInterfaceManager: HttpInterfaceManager = ThreadLocalHttpInterfaceManager(
         HttpClientTools
             .createSharedCookiesHttpBuilder()
@@ -42,25 +47,19 @@ class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
         }
     }
 
-    override fun isTrackEncodable(track: AudioTrack): Boolean {
-        return true
-    }
+    override fun isTrackEncodable(track: AudioTrack): Boolean = true
 
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack? {
-        return GetyarnAudioTrack(trackInfo, this)
-    }
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack? =
+        GetyarnAudioTrack(trackInfo, this)
 
-    override fun configureRequests(configurator: RequestConfigurator) {
+    override fun configureRequests(configurator: RequestConfigurator) =
         httpInterfaceManager.configureRequests(configurator)
-    }
 
-    override fun configureBuilder(configurator: BuilderConfigurator) {
+    override fun configureBuilder(configurator: BuilderConfigurator) =
         httpInterfaceManager.configureBuilder(configurator)
-    }
 
-    private fun createTrack(trackInfo: AudioTrackInfo): AudioTrack {
-        return GetyarnAudioTrack(trackInfo, this)
-    }
+    private fun createTrack(trackInfo: AudioTrackInfo): AudioTrack =
+        GetyarnAudioTrack(trackInfo, this)
 
     private fun extractVideoUrlFromPage(reference: AudioReference): AudioTrack {
         try {
@@ -77,11 +76,7 @@ class GetyarnItemSourceManager : HttpConfigurable, ItemSourceManager {
                 return createTrack(trackInfo)
             }
         } catch (e: IOException) {
-            throw FriendlyException("Failed to load info for yarn clip", FriendlyException.Severity.SUSPICIOUS, null)
+            friendlyError("Failed to load info for yarn clip", FriendlyException.Severity.SUSPICIOUS)
         }
-    }
-
-    companion object {
-        private val GETYARN_REGEX = Pattern.compile("(?:http://|https://(?:www\\.)?)?getyarn\\.io/yarn-clip/(.*)")
     }
 }

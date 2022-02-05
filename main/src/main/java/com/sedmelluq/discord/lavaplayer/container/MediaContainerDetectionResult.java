@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.lava.track.info.AudioTrackInfo;
 
 /**
  * Result of audio container detection.

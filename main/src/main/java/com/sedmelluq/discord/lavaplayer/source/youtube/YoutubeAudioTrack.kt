@@ -3,12 +3,14 @@ package com.sedmelluq.discord.lavaplayer.source.youtube
 import com.sedmelluq.discord.lavaplayer.container.Formats
 import com.sedmelluq.discord.lavaplayer.container.matroska.MatroskaAudioTrack
 import com.sedmelluq.discord.lavaplayer.container.mpeg.MpegAudioTrack
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.YoutubeTrackFormat
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.common.tools.exception.friendlyCheck
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import java.net.URI
 
@@ -17,8 +19,7 @@ import java.net.URI
  * @param trackInfo     Track info
  * @param sourceManager Source manager which was used to find this track
  */
-class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: YoutubeItemSourceManager) :
-    DelegatedAudioTrack(trackInfo!!) {
+class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: YoutubeItemSourceManager) : DelegatedAudioTrack(trackInfo!!) {
     companion object {
         private val log = KotlinLogging.logger { }
 
@@ -26,14 +27,17 @@ class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: 
             return when {
                 info == null -> false
                 other == null -> true
-                info.ordinal != other.info.ordinal -> info.ordinal < other.info.ordinal
+                info.ordinal != other.info!!.ordinal -> info.ordinal < other.info.ordinal
                 else -> bitrate > other.bitrate
             }
         }
 
         private fun findBestSupportedFormat(formats: List<YoutubeTrackFormat>): YoutubeTrackFormat {
             val bestFormat = formats.fold<YoutubeTrackFormat, YoutubeTrackFormat?>(null) { a, n -> if (n.betterThan(a)) n else a }
-            check(bestFormat != null) { "No supported audio streams available, available types: ${formats.joinToString { it.type.mimeType }}" }
+            check(bestFormat != null) {
+                "No supported audio streams available, available types: ${formats.joinToString { it.contentType.mimeType }}"
+            }
+
             return bestFormat
         }
     }
@@ -42,23 +46,19 @@ class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: 
         YoutubeAudioTrack(info, sourceManager)
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
             val format = loadBestFormatWithUrl(httpInterface)
-            log.debug { "Starting track from URL: $format.signedUrl{}" }
+            log.debug { "Starting track from URL: ${format.signedUrl}" }
 
-            if (info.isStream) {
-                processStream(executor, format)
-            } else {
-                processStatic(executor, httpInterface, format)
-            }
+            if (info.isStream) processStream(executor, format) else processStatic(executor, httpInterface, format)
         }
     }
 
     @Throws(Exception::class)
-    private fun processStatic(localExecutor: LocalAudioTrackExecutor, httpInterface: HttpInterface, format: FormatWithUrl) {
+    private suspend fun processStatic(localExecutor: LocalAudioTrackExecutor, httpInterface: HttpInterface, format: FormatWithUrl) {
         YoutubePersistentHttpStream(httpInterface, format.signedUrl, format.details.contentLength).use { stream ->
-            if (format.details.type.mimeType.endsWith("/webm")) {
+            if (format.details.contentType.mimeType.endsWith("/webm")) {
                 processDelegate(MatroskaAudioTrack(info, stream), localExecutor)
             } else {
                 processDelegate(MpegAudioTrack(info, stream), localExecutor)
@@ -67,9 +67,9 @@ class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: 
     }
 
     @Throws(Exception::class)
-    private fun processStream(localExecutor: LocalAudioTrackExecutor, format: FormatWithUrl) {
-        if (Formats.MIME_AUDIO_WEBM == format.details.type.mimeType) {
-            throw FriendlyException("YouTube WebM streams are currently not supported.", FriendlyException.Severity.COMMON, null)
+    private suspend fun processStream(localExecutor: LocalAudioTrackExecutor, format: FormatWithUrl) {
+        friendlyCheck(format.details.contentType.mimeType != Formats.MIME_AUDIO_WEBM) {
+            "YouTube WebM streams are not supported"
         }
 
         sourceManager.httpInterface.use { streamingInterface ->
@@ -81,7 +81,7 @@ class YoutubeAudioTrack(trackInfo: AudioTrackInfo?, override val sourceManager: 
     @Throws(Exception::class)
     private fun loadBestFormatWithUrl(httpInterface: HttpInterface): FormatWithUrl {
         val details = sourceManager.trackDetailsLoader.loadDetails(httpInterface, identifier, true, sourceManager)
-            ?: throw FriendlyException("This video is not available", FriendlyException.Severity.COMMON, null)
+            ?: friendlyError("This video is not available")
 
         // If the error reason is "Video unavailable" details will return null
         val formats = details.getFormats(httpInterface, sourceManager.signatureResolver)

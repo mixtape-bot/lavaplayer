@@ -3,9 +3,9 @@ package com.sedmelluq.discord.lavaplayer.filter
 /**
  * A chain of audio filters.
  *
- * @param input   See [.input].
- * @param filters See [.filters].
- * @param context See [.context].
+ * @param input   See [input].
+ * @param filters See [filters].
+ * @param context See [context].
  */
 data class AudioFilterChain(
     /**

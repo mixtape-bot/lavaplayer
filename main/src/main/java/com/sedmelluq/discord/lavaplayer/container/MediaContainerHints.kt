@@ -21,14 +21,8 @@ data class MediaContainerHints internal constructor(
          * @param fileExtension File extension
          * @return Instance of hints object with the specified parameters
          */
-        @JvmStatic
-        fun from(mimeType: String?, fileExtension: String?): MediaContainerHints {
-            return if (mimeType == null && fileExtension == null) {
-                NO_INFORMATION
-            } else {
-                MediaContainerHints(mimeType, fileExtension)
-            }
-        }
+        fun from(mimeType: String?, fileExtension: String?): MediaContainerHints =
+            if (mimeType == null && fileExtension == null) NO_INFORMATION else MediaContainerHints(mimeType, fileExtension)
     }
 
     /**

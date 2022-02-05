@@ -1,6 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch;
 
-import kotlin.text.Charsets;
 import com.sedmelluq.discord.lavaplayer.container.playlists.ExtendedM3uParser;
 import com.sedmelluq.discord.lavaplayer.source.stream.M3uStreamSegmentUrlProvider;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools;
@@ -10,7 +9,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +62,8 @@ public class TwitchStreamSegmentUrlProvider extends M3uStreamSegmentUrlProvider 
 
         ChannelStreamInfo stream = streams.entries.get(0);
 
-        log.debug("Chose stream with quality {} from url {}", stream.quality, stream.url);
-        streamSegmentPlaylistUrl = stream.url;
+        log.debug("Chose stream with quality {} from url {}", stream.getQuality(), stream.getUrl());
+        streamSegmentPlaylistUrl = stream.getUrl();
 
         long tokenServerExpirationTime = JsonBrowser.parse(token.get(TOKEN_PARAMETER).text()).get("expires").asLong() * 1000L;
         tokenExpirationTime = System.currentTimeMillis() + (tokenServerExpirationTime - streams.serverTime) - 5000;

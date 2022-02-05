@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.TrustManagerBuilder;
+import com.sedmelluq.lava.common.tools.exception.FriendlyException;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.config.MessageConstraints;
@@ -38,8 +38,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import java.util.concurrent.TimeUnit;
 
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON;
-import static com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS;
+import static com.sedmelluq.lava.common.tools.exception.FriendlyException.Severity.COMMON;
+import static com.sedmelluq.lava.common.tools.exception.FriendlyException.Severity.SUSPICIOUS;
 
 public class ExtendedHttpClientBuilder extends HttpClientBuilder {
     private static final Logger log = LoggerFactory.getLogger(ExtendedHttpClientBuilder.class);

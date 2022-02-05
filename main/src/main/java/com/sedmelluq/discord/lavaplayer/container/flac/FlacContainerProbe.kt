@@ -1,16 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.container.flac
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_ARTIST
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.UNKNOWN_TITLE
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.Companion.UNKNOWN_ARTIST
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection.Companion.UNKNOWN_TITLE
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.extensions.create
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfoBuilder
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -34,10 +35,7 @@ object FlacContainerProbe : MediaContainerProbe {
         log.debug { "Track ${reference.identifier} is a FLAC file." }
 
         val fileInfo = FlacFileLoader(inputStream).parseHeaders()
-        println(reference)
-        println(fileInfo)
-
-        val trackInfo = create(reference, inputStream) {
+        val trackInfo = AudioTrackInfoBuilder.create(reference, inputStream) {
             title = fileInfo.tags[TITLE_TAG] ?: UNKNOWN_TITLE
             author = fileInfo.tags[ARTIST_TAG] ?: UNKNOWN_ARTIST
             length = fileInfo.duration

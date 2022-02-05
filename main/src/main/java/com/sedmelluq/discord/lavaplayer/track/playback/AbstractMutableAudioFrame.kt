@@ -18,7 +18,5 @@ abstract class AbstractMutableAudioFrame : AudioFrame {
     /**
      * @return An immutable instance created from this mutable audio frame. In an ideal flow, this should never be called.
      */
-    fun freeze(): ImmutableAudioFrame {
-        return ImmutableAudioFrame(timecode, data, volume, format!!)
-    }
+    fun freeze(): ImmutableAudioFrame = ImmutableAudioFrame(timecode, data, volume, format!!)
 }

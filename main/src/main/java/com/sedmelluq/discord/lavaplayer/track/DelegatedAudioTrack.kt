@@ -1,6 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.track
 
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Audio track which delegates its processing to another track. The delegate does not have to be known when the
@@ -10,14 +14,21 @@ import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
  */
 abstract class DelegatedAudioTrack(trackInfo: AudioTrackInfo) : BaseAudioTrack(trackInfo) {
     private var delegate: InternalAudioTrack? = null
+    private val mutex = Mutex()
 
     override val duration: Long
-        get() = delegate?.duration ?: synchronized(this) { delegate?.duration ?: super.duration }
+        get() {
+            return runBlocking {
+                delegate?.duration ?: mutex.withLock(this@DelegatedAudioTrack) { delegate?.duration ?: super.duration }
+            }
+        }
 
-    fun processDelegate(delegate: InternalAudioTrack, localExecutor: LocalAudioTrackExecutor) = synchronized(this) {
-        this.delegate = delegate
+    suspend fun processDelegate(delegate: InternalAudioTrack, localExecutor: LocalAudioTrackExecutor) {
+        mutex.withLock(this) {
+            this.delegate = delegate
 
-        delegate.assignExecutor(localExecutor, false)
-        delegate.process(localExecutor)
+            delegate.assignExecutor(localExecutor, false)
+            delegate.process(localExecutor)
+        }
     }
 }

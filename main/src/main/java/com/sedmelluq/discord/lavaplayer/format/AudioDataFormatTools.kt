@@ -22,7 +22,7 @@ object AudioDataFormatTools {
                 format.sampleRate.toFloat(), format.codecName == Pcm16AudioDataFormat.CODEC_NAME_BE
             )
         } else {
-            throw IllegalStateException("Only PCM is currently supported.")
+            error("Only PCM is currently supported.")
         }
     }
 }

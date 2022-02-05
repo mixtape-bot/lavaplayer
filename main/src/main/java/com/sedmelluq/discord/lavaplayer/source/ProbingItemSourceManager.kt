@@ -3,10 +3,10 @@ package com.sedmelluq.discord.lavaplayer.source
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
@@ -14,30 +14,27 @@ import java.io.IOException
 /**
  * The base class for audio sources which use probing to detect container type.
  */
-abstract class ProbingItemSourceManager(@JvmField protected val containerRegistry: MediaContainerRegistry) :
-    ItemSourceManager {
+abstract class ProbingItemSourceManager(
+    @JvmField
+    protected val containerRegistry: MediaContainerRegistry
+) : ItemSourceManager {
     companion object {
         private const val PARAMETERS_SEPARATOR = '|'
     }
 
-    protected abstract fun createTrack(
-        trackInfo: AudioTrackInfo,
-        containerDescriptor: MediaContainerDescriptor
-    ): AudioTrack
+    protected abstract fun createTrack(trackInfo: AudioTrackInfo, containerDescriptor: MediaContainerDescriptor): AudioTrack
 
     protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? = if (result != null) {
         when {
-            result.isReference -> result.reference
-            !result.isContainerDetected -> throw FriendlyException(
-                "Unknown file format.",
-                FriendlyException.Severity.COMMON,
-                null
-            )
-            !result.isSupportedFile -> throw FriendlyException(
-                result.unsupportedReason,
-                FriendlyException.Severity.COMMON,
-                null
-            )
+            result.isReference ->
+                result.reference
+
+            !result.isContainerDetected ->
+                friendlyError("Unknown file format.")
+
+            !result.isSupportedFile ->
+                friendlyError(result.unsupportedReason)
+
             else -> createTrack(result.trackInfo, result.containerDescriptor)
         }
     } else {

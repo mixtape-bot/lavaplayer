@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.http;
 
-import com.sedmelluq.discord.lavaplayer.tools.exception.DetailMessageBuilder;
+import com.sedmelluq.lava.common.tools.exception.DetailMessageBuilder;
 import org.apache.http.HttpHost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Lookup;

@@ -5,6 +5,7 @@ import lavaplayer.demo.BotGuildContext;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 
+import javax.print.attribute.standard.PageRanges;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -41,18 +42,17 @@ public class BotControllerManager {
         String usage = annotation.usage().isEmpty() ? null : annotation.usage();
 
         Parameter[] methodParameters = method.getParameters();
-        if (methodParameters.length == 0 || !methodParameters[0].getType().isAssignableFrom(Message.class)) {
-            return;
-        }
+
+        boolean messageParameter = methodParameters.length > 0 && methodParameters[0].getType().isAssignableFrom(Message.class);
 
         method.setAccessible(true);
 
         List<Class<?>> parameters = new ArrayList<>();
-        for (int i = 1; i < methodParameters.length; i++) {
+        for (int i = messageParameter ? 1 : 0; i < methodParameters.length; i++) {
             parameters.add(methodParameters[i].getType());
         }
 
-        Command command = new Command(commandName, usage, parameters, controllerClass, method);
+        Command command = new Command(commandName, usage, parameters, controllerClass, method, messageParameter);
         commands.put(command.name, command);
     }
 
@@ -81,14 +81,19 @@ public class BotControllerManager {
             return;
         }
 
-        Object[] arguments = new Object[command.parameters.size() + 1];
-        arguments[0] = message;
+        int size = command.parameters.size();
+        int increment = command.messageParameter ? 1 : 0;
+
+        Object[] arguments = new Object[size + increment];
+        if (command.messageParameter) {
+            arguments[0] = message;
+        }
 
         for (int i = 0; i < command.parameters.size(); i++) {
             Class<?> parameterClass = command.parameters.get(i);
 
             try {
-                arguments[i + 1] = parseArgument(parameterClass, inputArguments[i]);
+                arguments[i + increment] = parseArgument(parameterClass, inputArguments[i]);
             } catch (IllegalArgumentException ignored) {
                 handler.commandWrongParameterType(message, command.name, command.usage, i, inputArguments[i], parameterClass);
                 return;
@@ -158,13 +163,15 @@ public class BotControllerManager {
         private final List<Class<?>> parameters;
         private final Class<?> controllerClass;
         private final Method commandMethod;
+        private final boolean messageParameter;
 
-        private Command(String name, String usage, List<Class<?>> parameters, Class<?> controllerClass, Method commandMethod) {
+        private Command(String name, String usage, List<Class<?>> parameters, Class<?> controllerClass, Method commandMethod, boolean messageParameter) {
             this.name = name;
             this.usage = usage;
             this.parameters = parameters;
             this.controllerClass = controllerClass;
             this.commandMethod = commandMethod;
+            this.messageParameter = messageParameter;
         }
     }
 }

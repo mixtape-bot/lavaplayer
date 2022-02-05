@@ -10,7 +10,7 @@ package com.sedmelluq.discord.lavaplayer.container.mpeg
  * @param sampleRate     Sample rate for audio
  * @param decoderConfig
  */
-data class MpegTrackInfo(
+class MpegTrackInfo(
     /**
      * ID of the track
      */

@@ -1,7 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.track
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider
+import com.sedmelluq.lava.track.info.AudioTrackInfoProvider
 
 /**
  * An audio item which refers to an unloaded audio item. Source managers can return this to indicate a redirection,
@@ -10,7 +10,7 @@ import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider
  * @param identifier The identifier of the other item.
  * @param title      The title of the other item, if known.
  */
-data class AudioReference @JvmOverloads constructor(
+open class AudioReference @JvmOverloads constructor(
     /**
      * The identifier of the other item.
      */
@@ -18,7 +18,7 @@ data class AudioReference @JvmOverloads constructor(
     /**
      * The title of the other item, if known.
      */
-    override val title: String?,
+    override val title: String? = null,
     /**
      * Known probe and probe settings of the item to be loaded.
      */

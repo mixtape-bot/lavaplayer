@@ -30,7 +30,7 @@ class ThreadLocalHttpInterfaceManager(
         val client = getSharedClient()
 
         var httpInterface = httpInterfaces.get()
-        if (httpInterface.httpClient !== client) {
+        if (httpInterface.httpClient != client) {
             httpInterfaces.remove()
             httpInterface = httpInterfaces.get()
         }

@@ -1,13 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3;
 
+import com.sedmelluq.discord.lavaplayer.container.TrackProvider;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
 import com.sedmelluq.discord.lavaplayer.filter.PcmFormat;
 import com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder;
 import com.sedmelluq.discord.lavaplayer.tools.Units;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
+import com.sedmelluq.lava.track.info.AudioTrackInfoProvider;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -26,7 +27,7 @@ import static com.sedmelluq.discord.lavaplayer.natives.mp3.Mp3Decoder.MPEG1_SAMP
 /**
  * Handles parsing MP3 files, seeking and sending the decoded frames to the specified frame consumer.
  */
-public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable {
+public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable, TrackProvider {
     private static final byte[] IDV3_TAG = new byte[]{0x49, 0x44, 0x33};
     private static final int IDV3_FLAG_EXTENDED = 0x40;
 
@@ -116,6 +117,7 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable {
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
+    @Override
     public void provideFrames() throws InterruptedException {
         try {
             while (frameReader.fillFrameBuffer()) {
@@ -143,6 +145,7 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable {
      *
      * @param timecode The timecode in milliseconds
      */
+    @Override
     public void seekToTimecode(long timecode) {
         try {
             long frameIndex = seeker.seekAndGetFrameIndex(timecode, inputStream);

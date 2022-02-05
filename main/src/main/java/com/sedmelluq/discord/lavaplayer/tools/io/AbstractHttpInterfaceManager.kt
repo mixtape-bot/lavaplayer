@@ -16,16 +16,18 @@ abstract class AbstractHttpInterfaceManager(
     private var requestConfig: RequestConfig
 ) : HttpInterfaceManager {
     companion object {
-        private val logger = KotlinLogging.logger { }
+        private val log = KotlinLogging.logger { }
     }
 
     private var closed: Boolean = false
     private var sharedClient: CloseableHttpClient? = null
 
     @Throws(IOException::class)
-    override fun close() = synchronized(this) {
-        closed = true
-        sharedClient?.use { sharedClient = null } ?: Unit
+    override fun close() {
+        synchronized(this) {
+            closed = true
+            sharedClient?.use { sharedClient = null }
+        }
     }
 
     override fun configureRequests(configurator: RequestConfigurator) {
@@ -33,7 +35,7 @@ abstract class AbstractHttpInterfaceManager(
             try {
                 close()
             } catch (e: Exception) {
-                logger.warn(e) { "Failed to close HTTP client." }
+                log.warn(e) { "Failed to close HTTP client." }
             }
 
             closed = false
@@ -47,7 +49,7 @@ abstract class AbstractHttpInterfaceManager(
             try {
                 close()
             } catch (e: Exception) {
-                logger.warn(e) { "Failed to close HTTP client." }
+                log.warn(e) { "Failed to close HTTP client." }
             }
 
             closed = false
@@ -57,7 +59,7 @@ abstract class AbstractHttpInterfaceManager(
 
     protected fun getSharedClient() = synchronized(this) {
         if (closed) {
-            throw IllegalStateException("Cannot get http client for a closed manager.")
+            error("Cannot get http client for a closed manager.")
         }
 
         if (sharedClient == null) {

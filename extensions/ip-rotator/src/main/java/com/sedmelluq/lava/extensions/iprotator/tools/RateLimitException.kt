@@ -1,9 +1,9 @@
 package com.sedmelluq.lava.extensions.iprotator.tools
 
-class RateLimitException : RuntimeException {
-    constructor() : super()
+public class RateLimitException : RuntimeException {
+    public constructor() : super()
 
-    constructor(message: String) : super(message)
+    public constructor(message: String) : super(message)
 
-    constructor(message: String, cause: Throwable) : super(message, cause)
+    public constructor(message: String, cause: Throwable) : super(message, cause)
 }

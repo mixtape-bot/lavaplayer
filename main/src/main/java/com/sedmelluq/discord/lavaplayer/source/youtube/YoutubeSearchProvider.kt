@@ -1,13 +1,17 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
-import kotlinx.serialization.Serializable
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager
-import com.sedmelluq.discord.lavaplayer.track.*
-import kotlinx.serialization.json.JsonObject
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
+import com.sedmelluq.discord.lavaplayer.track.AudioItem
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackFactory
+import com.sedmelluq.discord.lavaplayer.track.collection.SearchResult
+import com.sedmelluq.lava.common.tools.exception.wrapUnfriendlyException
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
@@ -39,17 +43,17 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
 
                 httpInterface.execute(post).use { response ->
                     HttpClientTools.assertSuccessWithContent(response, "search response")
-                    val searchResults = response.entity.content.decodeJson<SearchResult>()
+                    val searchResults = JsonTools.decode<Results>(response.entity.content)
                     return extractSearchResults(searchResults, query, trackFactory)
                 }
             }
         } catch (e: Exception) {
-            throw ExceptionTools.wrapUnfriendlyException(e)
+            throw e.wrapUnfriendlyException()
         }
     }
 
     private fun extractSearchResults(
-        searchResults: SearchResult,
+        searchResults: Results,
         query: String,
         trackFactory: AudioTrackFactory
     ): AudioItem {
@@ -58,16 +62,11 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
         val tracks: MutableList<AudioTrack> = extractSearchPage(searchResults, trackFactory)
             .ifEmpty { return AudioReference.NO_TRACK }
 
-        return BasicAudioTrackCollection(
-            "Search results for: $query",
-            AudioTrackCollectionType.SearchResult(query),
-            tracks,
-            null
-        )
+        return SearchResult(query, tracks)
     }
 
     @Throws(IOException::class)
-    private fun extractSearchPage(searchResults: SearchResult, trackFactory: AudioTrackFactory): MutableList<AudioTrack> {
+    private fun extractSearchPage(searchResults: Results, trackFactory: AudioTrackFactory): MutableList<AudioTrack> {
         return searchResults.contents.sectionListRenderer.contents.first().itemSectionRenderer.contents
             .mapNotNull { extractPolymerData(it, trackFactory) }
             .toMutableList()
@@ -82,7 +81,7 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
             ?: return null
 
         /* create the audio track. */
-        val info = AudioTrackInfo(
+        val info = BasicAudioTrackInfo(
             title = video.title,
             author = video.author!!,
             length = length,
@@ -95,7 +94,7 @@ class YoutubeSearchProvider : YoutubeSearchResultLoader {
     }
 
     @Serializable
-    data class SearchResult(val contents: Contents) {
+    data class Results(val contents: Contents) {
         @Serializable
         data class Contents(val sectionListRenderer: SectionList)
     }

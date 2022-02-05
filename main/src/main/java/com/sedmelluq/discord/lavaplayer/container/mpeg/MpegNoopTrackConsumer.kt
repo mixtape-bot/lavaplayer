@@ -11,6 +11,6 @@ class MpegNoopTrackConsumer(override val track: MpegTrackInfo) : MpegTrackConsum
     override fun initialise() = Unit
     override fun seekPerformed(requestedTimecode: Long, providedTimecode: Long) = Unit
     override fun flush() = Unit
-    override fun consume(channel: ReadableByteChannel?, length: Int) = Unit
+    override fun consume(channel: ReadableByteChannel, length: Int) = Unit
     override fun close() = Unit
 }

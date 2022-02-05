@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.YoutubeTrackFormat
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import java.io.IOException
 import java.net.URI
@@ -13,5 +14,5 @@ interface YoutubeSignatureResolver {
     fun resolveDashUrl(httpInterface: HttpInterface, playerScript: String?, dashUrl: String): String
 
     @Throws(IOException::class)
-    fun getCipherKeyAndTimestampFromScript(httpInterface: HttpInterface, playerScript: String): YoutubeSignatureCipher?
+    fun getCipherKeyAndTimestampFromScript(httpInterface: HttpInterface, playerScript: String): YoutubeSignatureCipher
 }

@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.tools.extensions.notifyAll
-import kotlinx.atomicfu.AtomicRef
 import mu.KotlinLogging
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeoutException
  * @param format         The format of the frames held in this buffer
  * @param stopping       Atomic boolean which has true value when the track is in a state of pending stop.
  */
-class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, private val stopping: (() -> Boolean)?) : AbstractAudioFrameBuffer(format) {
+class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, private val stopping: () -> Boolean) : AbstractAudioFrameBuffer(format) {
     companion object {
         private val log = KotlinLogging.logger {  }
     }
@@ -121,7 +120,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
         // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
         // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
         // offer with timeout, check stopping if timed out, then put?
-        if (stopping?.invoke() == true) {
+        if (stopping()) {
             throw InterruptedException()
         }
 

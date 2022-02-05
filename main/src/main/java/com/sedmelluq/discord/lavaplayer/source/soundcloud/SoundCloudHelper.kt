@@ -9,17 +9,15 @@ import java.net.URI
 
 object SoundCloudHelper {
     @JvmStatic
-    fun nonMobileUrl(url: String): String {
-        return url.takeIf { !url.startsWith("https://m.") }
-            ?: "https://${url.substring("https://m.".length)}"
-    }
+    fun nonMobileUrl(url: String): String =
+        url.replace("""^https?://m\.""".toRegex(), "https://")
 
     @Throws(IOException::class)
     @JvmStatic
     fun loadPlaybackUrl(httpInterface: HttpInterface, jsonUrl: String): String {
         PersistentHttpStream(httpInterface, URI.create(jsonUrl), null).use { stream ->
             if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {
-                throw IOException("Invalid status code for soundcloud stream: " + stream.checkStatusCode())
+                throw IOException("Invalid status code for soundcloud stream: ${stream.checkStatusCode()}")
             }
 
             return JsonBrowser.parse(stream)["url"].safeText

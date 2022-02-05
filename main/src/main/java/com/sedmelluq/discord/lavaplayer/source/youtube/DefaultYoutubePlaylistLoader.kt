@@ -1,10 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
-import com.sedmelluq.discord.lavaplayer.track.*
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackFactory
+import com.sedmelluq.discord.lavaplayer.track.collection.AudioTrackCollection
+import com.sedmelluq.discord.lavaplayer.track.collection.Playlist
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import java.io.IOException
@@ -15,12 +19,12 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
 
     override fun load(
         httpInterface: HttpInterface,
-        playlistId: String,
+        identifier: String,
         selectedVideoId: String?,
         trackFactory: AudioTrackFactory
-    ): BasicAudioTrackCollection {
+    ): AudioTrackCollection {
         val post = HttpPost(YoutubeConstants.BROWSE_URL)
-        post.entity = StringEntity(YoutubeConstants.BROWSE_PLAYLIST_PAYLOAD.format(playlistId), "UTF-8")
+        post.entity = StringEntity(YoutubeConstants.BROWSE_PLAYLIST_PAYLOAD.format(identifier), "UTF-8")
 
         try {
             httpInterface.execute(post).use { response ->
@@ -39,11 +43,9 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
         httpInterface: HttpInterface,
         playlist: JsonBrowser,
         selectedVideoId: String?,
-        trackFactory: AudioTrackFactory
-    ): BasicAudioTrackCollection {
-        findErrorAlert(playlist)?.let { message ->
-            throw FriendlyException(message, FriendlyException.Severity.COMMON, null)
-        }
+        trackFactory: AudioTrackFactory,
+    ): AudioTrackCollection {
+        findErrorAlert(playlist)?.let(::friendlyError)
 
         val playlistName =
             playlist["header"]["playlistHeaderRenderer"]["title"]["runs"][0]["text"].text
@@ -71,9 +73,8 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
             }
         }
 
-        return BasicAudioTrackCollection(
+        return Playlist(
             playlistName!!,
-            AudioTrackCollectionType.Playlist,
             tracks,
             findSelectedTrack(tracks, selectedVideoId)
         )
@@ -118,12 +119,12 @@ class DefaultYoutubePlaylistLoader : YoutubePlaylistLoader {
             if (video.isPlayable != null && video.author != null) {
 
                 /* create the audio track. */
-                val info = AudioTrackInfo(
+                val info = BasicAudioTrackInfo(
                     title = video.title,
                     author = video.author!!,
                     length = video.length!!,
                     identifier = video.id,
-                    uri = "https://www.youtube.com/watch?v=${video.id}",
+                    uri = "${YoutubeConstants.WATCH_URL_PREFIX}${video.id}",
                     artworkUrl = video.thumbnail,
                 )
 

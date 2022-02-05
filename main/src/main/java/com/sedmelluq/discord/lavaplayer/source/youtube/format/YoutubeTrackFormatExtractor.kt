@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube.format
 
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeSignatureResolver
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeTrackFormat
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeTrackJsonData
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 

@@ -1,9 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.container.mp3
 
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.BaseAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 
 /**
@@ -18,18 +18,15 @@ class Mp3AudioTrack(trackInfo: AudioTrackInfo?, private val inputStream: Seekabl
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
-        val provider = Mp3TrackProvider(executor.processingContext, inputStream)
-
-        try {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
+        Mp3TrackProvider(executor.processingContext, inputStream).use { provider ->
             provider.parseHeaders()
+
             log.debug { "Starting to play MP3 track $identifier" }
             executor.executeProcessingLoop(
-                { provider.provideFrames() },
-                { provider.seekToTimecode(it) }
+                readExecutor = provider::provideFrames,
+                seekExecutor = provider::seekToTimecode
             )
-        } finally {
-            provider.close()
         }
     }
 }

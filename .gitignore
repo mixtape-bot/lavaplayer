@@ -34,3 +34,6 @@ testbot/src/main/java/local
 
 # json samples
 json-samples/
+
+# env
+*.env

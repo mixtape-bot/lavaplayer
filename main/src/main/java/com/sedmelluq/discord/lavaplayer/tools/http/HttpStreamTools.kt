@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.http
 
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
+import com.sedmelluq.discord.lavaplayer.tools.extensions.closeWithWarnings
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import org.apache.http.client.methods.CloseableHttpResponse
@@ -29,7 +29,7 @@ object HttpStreamTools {
             throw RuntimeException(e)
         } finally {
             if (response != null && !success) {
-                ExceptionTools.closeWithWarnings(response)
+                response.closeWithWarnings()
             }
         }
     }

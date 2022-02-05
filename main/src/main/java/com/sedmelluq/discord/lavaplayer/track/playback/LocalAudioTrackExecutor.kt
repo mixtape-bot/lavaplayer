@@ -3,24 +3,29 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 import com.sedmelluq.discord.lavaplayer.manager.AudioConfiguration
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerResources
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.track.*
-import com.sedmelluq.discord.lavaplayer.track.TrackMarkerHandler.MarkerState
-import kotlinx.atomicfu.AtomicRef
+import com.sedmelluq.discord.lavaplayer.tools.extensions.friendlyError
+import com.sedmelluq.discord.lavaplayer.tools.extensions.rethrow
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackState
+import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack
+import com.sedmelluq.discord.lavaplayer.track.TrackStateListener
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarker
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarkerHandler.MarkerState
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarkerManager
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.common.tools.exception.wrapUnfriendlyException
 import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.update
 import mu.KotlinLogging
 import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Handles the execution and output buffering of an audio track.
  *
  * @param audioTrack      The audio track that this executor executes
  * @param configuration   Configuration to use for audio processing
- * @param playerOptions   Mutable player options (for example volume).
+ * @param resources       Mutable player resources (for example volume).
  * @param useSeekGhosting Whether to keep providing old frames continuing from the previous position during a seek
  * until frames from the new position arrive.
  * @param bufferDuration  The size of the frame buffer in milliseconds
@@ -28,20 +33,24 @@ import java.util.concurrent.atomic.AtomicReference
 class LocalAudioTrackExecutor(
     private val audioTrack: InternalAudioTrack,
     configuration: AudioConfiguration,
-    playerOptions: AudioPlayerResources,
+    resources: AudioPlayerResources,
     private val useSeekGhosting: Boolean,
     bufferDuration: Int
 ) : AudioTrackExecutor {
     companion object {
-        private val log = KotlinLogging.logger {  }
+        private val log = KotlinLogging.logger { }
     }
 
-    @Volatile
-    private var trackException: Throwable? = null
+    /* atomics */
+    private val _state = atomic(AudioTrackState.INACTIVE)
     private var queuedStop by atomic(false)
     private var queuedSeek by atomic(-1L)
     private var lastFrameTimecode by atomic(0L)
-    private val playingThread = AtomicReference<Thread?>()
+    private var playingThread by atomic<Thread?>(null)
+
+    /* other */
+    @Volatile
+    private var trackException: Throwable? = null
     private val actionSynchronizer = Any()
     private val markerTracker = TrackMarkerManager()
     private var externalSeekPosition: Long = -1
@@ -50,13 +59,9 @@ class LocalAudioTrackExecutor(
     private val isPerformingSeek: Boolean
         get() = queuedSeek != -1L || useSeekGhosting && audioBuffer.hasClearOnInsert()
 
-    override val audioBuffer: AudioFrameBuffer = configuration.frameBufferFactory.create(bufferDuration, configuration.outputFormat) { queuedStop }
-    override var state by atomic(AudioTrackState.INACTIVE)
+    override val audioBuffer = configuration.frameBufferFactory.create(bufferDuration, configuration.outputFormat) { queuedStop }
     override var position: Long
-        get() {
-            val seek = queuedSeek
-            return if (seek != -1L) seek else lastFrameTimecode
-        }
+        get() = queuedSeek.takeUnless { it == -1L } ?: lastFrameTimecode
         set(timecode) {
             if (!audioTrack.isSeekable) {
                 return
@@ -72,13 +77,15 @@ class LocalAudioTrackExecutor(
             }
         }
 
-    val processingContext: AudioProcessingContext = AudioProcessingContext(configuration, audioBuffer, playerOptions, configuration.outputFormat)
+    override var state: AudioTrackState by _state
+
+    val processingContext = AudioProcessingContext(configuration, audioBuffer, resources, configuration.outputFormat)
     val stackTrace: Array<StackTraceElement>?
         get() {
-            val thread = playingThread.get()
+            val thread = playingThread
             if (thread != null) {
                 val trace = thread.stackTrace
-                if (playingThread.get() === thread) {
+                if (playingThread == thread) {
                     return trace
                 }
             }
@@ -86,13 +93,16 @@ class LocalAudioTrackExecutor(
             return null
         }
 
-    override fun execute(listener: TrackStateListener?) {
+    override fun failedBeforeLoad(): Boolean = trackException != null && !audioBuffer.hasReceivedFrames()
+
+    override suspend fun execute(listener: TrackStateListener) {
         var interrupt: InterruptedException? = null
         if (Thread.interrupted()) {
             log.debug { "Cleared a stray interrupt." }
         }
 
-        if (playingThread.compareAndSet(null, Thread.currentThread())) {
+        if (playingThread == null) {
+            playingThread = Thread.currentThread()
             log.debug { "Starting to play track ${audioTrack.info.identifier} locally with listener $listener" }
             state = AudioTrackState.LOADING
 
@@ -102,22 +112,30 @@ class LocalAudioTrackExecutor(
             } catch (e: Throwable) {
                 // Temporarily clear the interrupted status, so it would not disrupt listener methods.
                 interrupt = findInterrupt(e)
+
                 if (interrupt != null && checkStopped()) {
                     log.debug { "Track ${audioTrack.identifier} was interrupted outside of execution loop." }
                 } else {
                     audioBuffer.setTerminateOnEmpty()
-                    val exception = ExceptionTools.wrapUnfriendlyException("Something broke when playing the track.", FriendlyException.Severity.FAULT, e)
-                    ExceptionTools.log(log, exception, "playback of ${audioTrack.identifier}")
+
+                    val exception = e.wrapUnfriendlyException("Something broke when playing the track.", FriendlyException.Severity.FAULT)
                     trackException = exception
-                    listener!!.onTrackException(audioTrack, exception)
-                    ExceptionTools.rethrowErrors(e)
+
+                    listener.onTrackException(audioTrack, exception)
+
+                    log.friendlyError(exception) { "playback of ${audioTrack.identifier}" }
+
+                    e.rethrow()
                 }
             } finally {
                 synchronized(actionSynchronizer) {
-                    interrupt = if (interrupt != null) interrupt else findInterrupt(null)
-                    playingThread.compareAndSet(Thread.currentThread(), null)
+                    interrupt = interrupt ?: findInterrupt(null)
+                    if (playingThread == Thread.currentThread()) {
+                        playingThread = null
+                    }
+
                     markerTracker.trigger(MarkerState.ENDED)
-                    state = AudioTrackState.FINISHED
+                    _state.value = AudioTrackState.FINISHED
                 }
 
                 if (interrupt != null) {
@@ -131,10 +149,13 @@ class LocalAudioTrackExecutor(
 
     override fun stop() {
         synchronized(actionSynchronizer) {
-            val thread = playingThread.get()
+            val thread = playingThread
             if (thread != null) {
                 log.debug { "Requesting stop for track ${audioTrack.identifier}" }
-                queuedStop = if (!queuedStop) true else queuedStop
+                if (!queuedStop) {
+                    queuedStop = true
+                }
+
                 thread.interrupt()
             } else {
                 log.debug { "Tried to stop track ${audioTrack.identifier} which is not playing." }
@@ -174,22 +195,12 @@ class LocalAudioTrackExecutor(
      */
     fun interrupt(): Boolean {
         synchronized(actionSynchronizer) {
-            val thread = playingThread.get()
-            if (thread != null) {
-                thread.interrupt()
-                return true
-            }
-
-            return false
+            return playingThread?.interrupt() == null
         }
     }
 
     override fun setMarker(marker: TrackMarker?) {
         markerTracker[marker] = position
-    }
-
-    override fun failedBeforeLoad(): Boolean {
-        return trackException != null && !audioBuffer.hasReceivedFrames()
     }
 
     /**
@@ -214,9 +225,11 @@ class LocalAudioTrackExecutor(
                 if (Thread.interrupted() && !handlePlaybackInterrupt(null, seekExecutor)) {
                     break
                 }
+
                 setInterruptableForSeek(true)
                 readExecutor.performRead()
                 setInterruptableForSeek(false)
+
                 if (seekExecutor != null && externalSeekPosition != -1L) {
                     val nextPosition = externalSeekPosition
                     externalSeekPosition = -1
@@ -230,7 +243,7 @@ class LocalAudioTrackExecutor(
 
                 val interruption = findInterrupt(e)
                 proceed = interruption?.let { handlePlaybackInterrupt(it, seekExecutor) }
-                    ?: throw ExceptionTools.wrapUnfriendlyException("Something went wrong when decoding the track.", FriendlyException.Severity.FAULT, e)
+                    ?: throw e.wrapUnfriendlyException("Something went wrong when decoding the track.", FriendlyException.Severity.FAULT)
             }
         }
     }
@@ -244,13 +257,13 @@ class LocalAudioTrackExecutor(
         synchronized(actionSynchronizer) {
             if (interruptableForSeek) {
                 interruptableForSeek = false
-                val thread = playingThread.get()
-                if (thread != null) {
-                    thread.interrupt()
+                val nullable = playingThread?.interrupt()
+                if (nullable == null) {
                     interrupted = true
                 }
             }
         }
+
         if (interrupted) {
             log.debug { "Interrupting playing thread to perform a seek ${audioTrack.identifier}" }
         } else {
@@ -264,6 +277,7 @@ class LocalAudioTrackExecutor(
             markerTracker.trigger(MarkerState.STOPPED)
             return false
         }
+
         val seekResult = checkPendingSeek(seekExecutor)
         return if (seekResult != SeekResult.NO_SEEK) {
             // Double-check, might have received a stop request while seeking
@@ -275,11 +289,7 @@ class LocalAudioTrackExecutor(
             }
         } else if (interruption != null) {
             Thread.currentThread().interrupt()
-            throw FriendlyException(
-                "The track was unexpectedly terminated.",
-                FriendlyException.Severity.SUSPICIOUS,
-                interruption
-            )
+            friendlyError("The track was unexpectedly terminated.", FriendlyException.Severity.SUSPICIOUS, interruption)
         } else {
             true
         }
@@ -293,9 +303,8 @@ class LocalAudioTrackExecutor(
                 exception = InterruptedException(ioException.message)
             }
         }
-        return if (exception == null && Thread.interrupted()) {
-            InterruptedException()
-        } else exception
+
+        return if (exception == null && Thread.interrupted()) InterruptedException() else exception
     }
 
     /**
@@ -316,7 +325,7 @@ class LocalAudioTrackExecutor(
                 return SeekResult.NO_SEEK
             }
 
-            log.debug("Track {} interrupted for seeking to {}.", audioTrack.identifier, seekPosition)
+            log.debug { "Track ${audioTrack.identifier} interrupted for seeking to $seekPosition." }
             applySeekState(seekPosition)
         }
 
@@ -333,11 +342,7 @@ class LocalAudioTrackExecutor(
         try {
             seekExecutor.performSeek(seekPosition)
         } catch (e: Exception) {
-            throw ExceptionTools.wrapUnfriendlyException(
-                "Something went wrong when seeking to a position.",
-                FriendlyException.Severity.FAULT,
-                e
-            )
+            throw e.wrapUnfriendlyException("Something went wrong when seeking to a position.", FriendlyException.Severity.FAULT)
         }
     }
 
@@ -356,6 +361,7 @@ class LocalAudioTrackExecutor(
     override fun provide(): AudioFrame? {
         val frame = audioBuffer.provide()
         processProvidedFrame(frame)
+
         return frame
     }
 
@@ -371,6 +377,7 @@ class LocalAudioTrackExecutor(
             processProvidedFrame(targetFrame)
             return true
         }
+
         return false
     }
 
@@ -395,7 +402,9 @@ class LocalAudioTrackExecutor(
     }
 
     private enum class SeekResult {
-        NO_SEEK, INTERNAL_SEEK, EXTERNAL_SEEK
+        NO_SEEK,
+        INTERNAL_SEEK,
+        EXTERNAL_SEEK
     }
 
     /**

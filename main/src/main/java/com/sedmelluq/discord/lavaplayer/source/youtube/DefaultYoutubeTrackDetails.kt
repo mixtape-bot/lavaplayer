@@ -1,26 +1,26 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
-import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyAdaptiveFormatsExtractor
-import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyDashMpdFormatsExtractor
-import com.sedmelluq.discord.lavaplayer.source.youtube.format.LegacyStreamMapFormatsExtractor
-import com.sedmelluq.discord.lavaplayer.source.youtube.format.StreamingDataFormatsExtractor
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.COMMON
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.YoutubeTrackFormat
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.extractor.LegacyAdaptiveFormatsExtractor
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.extractor.LegacyDashMpdFormatsExtractor
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.extractor.LegacyStreamMapFormatsExtractor
+import com.sedmelluq.discord.lavaplayer.source.youtube.format.extractor.StreamingDataFormatsExtractor
 import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools
 import com.sedmelluq.discord.lavaplayer.tools.Units
 import com.sedmelluq.discord.lavaplayer.tools.Units.DURATION_MS_UNKNOWN
+import com.sedmelluq.discord.lavaplayer.tools.extensions.toRuntimeException
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.common.tools.exception.FriendlyException.Severity.SUSPICIOUS
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import mu.KotlinLogging
 
 class DefaultYoutubeTrackDetails(
     private val videoId: String,
     private val data: YoutubeTrackJsonData
 ) : YoutubeTrackDetails {
-
     companion object {
         private val log = KotlinLogging.logger { }
         private val FORMAT_EXTRACTORS = listOf(
@@ -44,7 +44,7 @@ class DefaultYoutubeTrackDetails(
         try {
             return loadTrackFormats(httpInterface, signatureResolver)
         } catch (e: Exception) {
-            throw ExceptionTools.toRuntimeException(e)
+            throw e.toRuntimeException()
         }
     }
 
@@ -59,7 +59,7 @@ class DefaultYoutubeTrackDetails(
 
         if (formats == null) {
             log.warn { "Video $videoId with no detected format field, response ${data.playerResponse.format()} polymer ${data.polymerArguments.format()}" }
-            throw FriendlyException(
+            friendlyError(
                 "Unable to play this YouTube track.",
                 SUSPICIOUS,
                 IllegalStateException("No track formats found.")
@@ -72,7 +72,7 @@ class DefaultYoutubeTrackDetails(
     private fun loadTrackInfo(): AudioTrackInfo {
         val playabilityStatus = data.playerResponse["playabilityStatus"]
         if ("ERROR" == playabilityStatus["status"].safeText) {
-            throw FriendlyException(playabilityStatus["reason"].text, COMMON, null)
+            friendlyError(playabilityStatus["reason"].text)
         }
 
         val videoDetails = data.playerResponse["videoDetails"].takeUnless { it.isNull }
@@ -94,7 +94,7 @@ class DefaultYoutubeTrackDetails(
     private fun loadLegacyTrackInfo(): AudioTrackInfo {
         val args = data.polymerArguments
         if ("fail" == args["status"].safeText) {
-            throw FriendlyException(args["reason"].safeText, COMMON, null)
+            friendlyError(args["reason"].safeText)
         }
 
         val temporalInfo = TemporalInfo.fromRawData(args["live_playback"].safeText == "1", args["length_seconds"])
@@ -110,14 +110,14 @@ class DefaultYoutubeTrackDetails(
         temporalInfo: TemporalInfo,
         artworkUrl: String
     ): AudioTrackInfo {
-        return AudioTrackInfo(
-            title,
-            uploader,
-            temporalInfo.durationMillis,
-            videoId,
-            "https://www.youtube.com/watch?v=$videoId",
-            artworkUrl,
-            temporalInfo.isActiveStream
+        return BasicAudioTrackInfo(
+            title = title,
+            author = uploader,
+            length = temporalInfo.durationMillis,
+            identifier = videoId,
+            uri = "${YoutubeConstants.WATCH_URL_PREFIX}$videoId",
+            artworkUrl = artworkUrl,
+            isStream = temporalInfo.isActiveStream
         )
     }
 

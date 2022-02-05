@@ -16,7 +16,7 @@ interface LinkRouter<R : LinkRoutes> {
      */
     suspend fun find(identifier: String, routes: R): AudioItem?
 
-    interface UsingExtractors<R : LinkRoutes> : LinkRouter<R> {
+    interface Extracted<R : LinkRoutes> : LinkRouter<R> {
         /**
          * The extractors to use.
          */

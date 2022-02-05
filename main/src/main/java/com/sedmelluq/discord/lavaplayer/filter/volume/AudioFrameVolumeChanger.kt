@@ -78,7 +78,7 @@ class AudioFrameVolumeChanger private constructor(
         fun apply(context: AudioProcessingContext) {
             val volumeChanger = AudioFrameVolumeChanger(
                 context.configuration, context.outputFormat,
-                context.playerOptions.volumeLevel
+                context.resources.volumeLevel
             )
 
             try {

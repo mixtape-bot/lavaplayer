@@ -3,8 +3,8 @@ package com.sedmelluq.discord.lavaplayer.source
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import java.io.DataInput
 import java.io.DataOutput
 import java.io.IOException
@@ -40,6 +40,7 @@ interface ItemSourceManager {
      * @param track The track to check
      * @return True if it is encodable
      */
+    @Deprecated("Lavaplayer Node was removed in a previous version")
     fun isTrackEncodable(track: AudioTrack): Boolean
 
     /**
@@ -47,24 +48,27 @@ interface ItemSourceManager {
      * they are written to the output already before this call. This will only be called for tracks which were loaded by
      * this source manager and for which isEncodable() returns true.
      *
-     * @param track  The track to encode
-     * @param output Output where to write the decoded format to
+     * @param track   The track to encode
+     * @param output  Output where to write the decoded format to
+     * @param version The version of the track to encode.
+     *
      * @throws IOException On write error.
      */
     @Throws(IOException::class)
-    fun encodeTrack(track: AudioTrack, output: DataOutput) {
-    }
+    fun encodeTrack(track: AudioTrack, output: DataOutput, version: Int) = Unit
 
     /**
      * Decodes an audio track from the encoded format encoded with encodeTrack().
      *
      * @param trackInfo The track info
      * @param input     The input where to read the bytes of the encoded format
+     * @param version   The version of the track to decode.
+     *
      * @return The decoded track
      * @throws IOException On read error.
      */
     @Throws(IOException::class)
-    fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack?
+    fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack? = null
 
     /**
      * Shut down the source manager, freeing all associated resources and threads. A source manager is not responsible for

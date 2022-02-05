@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track
 
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
 
 /**
  * Listener of track execution events.

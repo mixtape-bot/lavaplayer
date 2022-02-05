@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.track
 
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+
 fun interface AudioTrackFactory {
     /**
      * Creates a new [AudioTrack] from the provided [AudioTrackInfo]

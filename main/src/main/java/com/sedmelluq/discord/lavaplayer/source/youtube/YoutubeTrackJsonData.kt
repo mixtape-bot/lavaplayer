@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDebugInfo
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
+import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
 import mu.KotlinLogging
 
 data class YoutubeTrackJsonData(
@@ -41,10 +41,10 @@ data class YoutubeTrackJsonData(
                     return YoutubeTrackJsonData(playerResponse, JsonBrowser.NULL_BROWSER, null)
                 }
             } catch (e: Exception) {
-                throw throwWithDebugInfo(log, e, "Error parsing result", "json", result.format())
+                throw ExceptionTools.throwWithDebugInfo(log, "Error parsing result", "json", result.format(), e)
             }
 
-            throw throwWithDebugInfo(log, null, "Neither player nor playerResponse in result", "json", result.format())
+            throw ExceptionTools.throwWithDebugInfo(log, "Neither player nor playerResponse in result", "json", result.format())
         }
 
         private fun fromPolymerPlayerInfo(playerInfo: JsonBrowser, playerResponse: JsonBrowser): YoutubeTrackJsonData {
@@ -61,9 +61,13 @@ data class YoutubeTrackJsonData(
 
         private fun parsePlayerResponse(playerResponseText: String): JsonBrowser {
             try {
-                return playerResponseText.decodeJson()
+                return JsonTools.decode(playerResponseText)
             } catch (e: Exception) {
-                throw throwWithDebugInfo(log, e, "Failed to parse player_response", "value", playerResponseText)
+                throw ExceptionTools.throwWithDebugInfo(log,
+                    "Failed to parse player_response",
+                    "value",
+                    playerResponseText,
+                    e)
             }
         }
 

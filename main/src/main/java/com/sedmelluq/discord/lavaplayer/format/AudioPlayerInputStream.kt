@@ -1,8 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.format
 
-import com.sedmelluq.discord.lavaplayer.format.AudioDataFormatTools.toAudioFormat
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
+import com.sedmelluq.discord.lavaplayer.tools.extensions.keepInterrupted
 import com.sedmelluq.discord.lavaplayer.track.TrackStateListener
 import java.io.IOException
 import java.io.InputStream
@@ -47,7 +46,7 @@ class AudioPlayerInputStream(
             stuckTimeout: Long,
             provideSilence: Boolean
         ): AudioInputStream {
-            val jdkFormat = toAudioFormat(format)
+            val jdkFormat = AudioDataFormatTools.toAudioFormat(format)
             return AudioInputStream(AudioPlayerInputStream(format, player, stuckTimeout, provideSilence), jdkFormat, -1)
         }
     }
@@ -74,7 +73,7 @@ class AudioPlayerInputStream(
     }
 
     @Throws(IOException::class)
-    override fun available(): Int {
+    override fun  available(): Int {
         return if (current != null) current!!.remaining() else 0
     }
 
@@ -91,9 +90,10 @@ class AudioPlayerInputStream(
             } catch (e: TimeoutException) {
                 notifyTrackStuck()
             } catch (e: InterruptedException) {
-                ExceptionTools.keepInterrupted(e)
+                e.keepInterrupted()
                 throw InterruptedIOException()
             }
+
             if (available() == 0 && provideSilence) {
                 addFrame(format.silenceBytes)
                 break

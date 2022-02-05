@@ -71,6 +71,9 @@ abstract class AudioDataFormat(
      */
     abstract fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder
 
+    override fun toString(): String =
+        "${this::class.simpleName}(channelCount=$channelCount, sampleRate=$sampleRate, chunkSampleCount=$chunkSampleCount)"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) {
             return true

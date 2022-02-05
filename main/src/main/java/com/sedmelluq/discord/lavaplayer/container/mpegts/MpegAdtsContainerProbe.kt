@@ -4,12 +4,13 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
 import com.sedmelluq.discord.lavaplayer.container.adts.AdtsStreamReader
+import com.sedmelluq.discord.lavaplayer.tools.extensions.create
 import com.sedmelluq.discord.lavaplayer.tools.io.SavedHeadSeekableInputStream
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfoBuilder
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -29,7 +30,7 @@ object MpegAdtsContainerProbe : MediaContainerProbe {
         try {
             if (reader.findPacketHeader() != null) {
                 log.debug { "Track ${reference.identifier} is an MPEG-TS stream with an ADTS track." }
-                val trackInfo = create(reference, inputStream)
+                val trackInfo = AudioTrackInfoBuilder.create(reference, inputStream)
                     .apply(tsStream.loadedMetadata)
                     .build()
 

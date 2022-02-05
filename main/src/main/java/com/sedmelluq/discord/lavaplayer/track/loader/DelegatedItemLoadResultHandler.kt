@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.track.loader
 
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection
+import com.sedmelluq.discord.lavaplayer.track.collection.AudioTrackCollection
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
 import java.util.function.Consumer
 
 open class DelegatedItemLoadResultHandler(

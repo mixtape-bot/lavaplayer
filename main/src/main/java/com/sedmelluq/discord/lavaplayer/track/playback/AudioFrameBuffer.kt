@@ -1,7 +1,5 @@
 package com.sedmelluq.discord.lavaplayer.track.playback
 
-import java.lang.InterruptedException
-
 /**
  * A frame buffer. Stores the specified duration worth of frames in the internal buffer.
  * Frames are consumed in a blocking manner and provides frames in a non-blocking manner.

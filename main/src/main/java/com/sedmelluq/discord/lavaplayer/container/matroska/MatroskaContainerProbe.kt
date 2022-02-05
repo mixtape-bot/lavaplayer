@@ -8,7 +8,8 @@ import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTr
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -44,7 +45,7 @@ object MatroskaContainerProbe : MediaContainerProbe {
             )
         }
 
-        val trackInfo = AudioTrackInfo(
+        val trackInfo = BasicAudioTrackInfo(
             title = MediaContainerDetection.UNKNOWN_TITLE,
             author = MediaContainerDetection.UNKNOWN_ARTIST,
             length = file.duration.toLong(),

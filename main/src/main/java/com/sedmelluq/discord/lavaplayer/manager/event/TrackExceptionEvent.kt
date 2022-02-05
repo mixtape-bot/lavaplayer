@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.manager.event
 
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
 
 /**
  * Event that is fired when an exception occurs in an audio track that causes it to halt or not start.

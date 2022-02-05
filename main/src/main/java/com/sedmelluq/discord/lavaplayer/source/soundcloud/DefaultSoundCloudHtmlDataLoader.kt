@@ -2,12 +2,12 @@ package com.sedmelluq.discord.lavaplayer.source.soundcloud
 
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException.Severity.SUSPICIOUS
 import com.sedmelluq.discord.lavaplayer.tools.TextRange
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
+import com.sedmelluq.lava.common.tools.exception.FriendlyException.Severity.SUSPICIOUS
+import com.sedmelluq.lava.common.tools.exception.friendlyError
 import mu.KotlinLogging
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
@@ -36,12 +36,13 @@ class DefaultSoundCloudHtmlDataLoader : SoundCloudHtmlDataLoader {
 
             val html = EntityUtils.toString(response.entity, Charsets.UTF_8)
             val rootData = DataFormatTools.extractBetween(html, JSON_RANGES)
-                ?: throw FriendlyException(
-                    "This url does not appear to be a playable track.", SUSPICIOUS,
-                    ExceptionTools.throwWithDebugInfo(log, null, "No track JSON found", "html", html)
+                ?: friendlyError(
+                    "This url does not appear to be a playable track.",
+                    SUSPICIOUS,
+                    ExceptionTools.throwWithDebugInfo(log, "No track JSON found", "html", html, null)
                 )
 
-            return rootData.decodeJson()
+            return JsonTools.decode(rootData)
         }
     }
 }

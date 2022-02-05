@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.flac
 
+import com.sedmelluq.discord.lavaplayer.tools.extensions.reverseBytes
 import org.apache.commons.io.IOUtils
 import java.io.DataInput
 import java.io.IOException
@@ -68,12 +69,12 @@ object FlacMetadataReader {
 
     @Throws(IOException::class)
     private fun readCommentBlock(dataInput: DataInput, inputStream: InputStream, trackInfoBuilder: FlacTrackInfoBuilder) {
-        val vendorLength = Integer.reverseBytes(dataInput.readInt())
+        val vendorLength = dataInput.readInt().reverseBytes()
         IOUtils.skipFully(inputStream, vendorLength.toLong())
 
-        val listLength = Integer.reverseBytes(dataInput.readInt())
+        val listLength = dataInput.readInt().reverseBytes()
         for (i in 0 until listLength) {
-            val itemLength = Integer.reverseBytes(dataInput.readInt())
+            val itemLength = dataInput.readInt().reverseBytes()
             val textBytes = ByteArray(itemLength)
             dataInput.readFully(textBytes)
 

@@ -1,11 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.manager
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.*
 import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory
 import com.sedmelluq.discord.lavaplayer.manager.event.AudioEvent
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.

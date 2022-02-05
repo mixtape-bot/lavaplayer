@@ -6,9 +6,9 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import java.io.IOException
 import java.net.URI
@@ -28,14 +28,14 @@ class SoundCloudAudioTrack(
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
             playFromIdentifier(httpInterface, info.identifier, false, executor)
         }
     }
 
     @Throws(Exception::class)
-    private fun playFromIdentifier(
+    private suspend fun playFromIdentifier(
         httpInterface: HttpInterface,
         identifier: String,
         recursion: Boolean,
@@ -43,15 +43,13 @@ class SoundCloudAudioTrack(
     ) {
         val m3uInfo = sourceManager.formatHandler.getM3uInfo(identifier)
         if (m3uInfo != null) {
-            processDelegate(SoundCloudM3uAudioTrack(info, httpInterface, m3uInfo), localExecutor)
-            return
+            return processDelegate(SoundCloudM3uAudioTrack(info, httpInterface, m3uInfo), localExecutor)
         }
 
         val mp3LookupUrl = sourceManager.formatHandler.getMp3LookupUrl(identifier)
         if (mp3LookupUrl != null) {
             val playbackUrl = loadPlaybackUrl(httpInterface, identifier.substring(2))
-            loadFromMp3Url(localExecutor, httpInterface, playbackUrl)
-            return
+            return loadFromMp3Url(localExecutor, httpInterface, playbackUrl)
         }
 
         if (!recursion) {
@@ -64,7 +62,7 @@ class SoundCloudAudioTrack(
     }
 
     @Throws(Exception::class)
-    private fun loadFromMp3Url(localExecutor: LocalAudioTrackExecutor, httpInterface: HttpInterface, trackUrl: String) {
+    private suspend fun loadFromMp3Url(localExecutor: LocalAudioTrackExecutor, httpInterface: HttpInterface, trackUrl: String) {
         log.debug { "Starting SoundCloud track from URL: $trackUrl" }
         PersistentHttpStream(httpInterface, URI(trackUrl), null).use { stream ->
             if (!HttpClientTools.isSuccessWithContent(stream.checkStatusCode())) {

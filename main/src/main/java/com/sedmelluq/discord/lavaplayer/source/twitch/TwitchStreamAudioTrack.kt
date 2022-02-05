@@ -3,8 +3,8 @@ package com.sedmelluq.discord.lavaplayer.source.twitch
 import com.sedmelluq.discord.lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 
 /**
@@ -33,7 +33,7 @@ class TwitchStreamAudioTrack(
         get() = sourceManager.httpInterface
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         log.debug { "Starting to play Twitch channel $channelName." }
         super.process(executor)
     }

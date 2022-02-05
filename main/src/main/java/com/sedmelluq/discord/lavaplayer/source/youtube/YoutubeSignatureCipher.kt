@@ -25,14 +25,17 @@ class YoutubeSignatureCipher {
         for (operation in operations) {
             when (operation.type) {
                 SWAP -> {
-
                     val position = operation.parameter % text.length
                     val temp = builder[0]
                     builder.setCharAt(0, builder[position])
                     builder.setCharAt(position, temp)
                 }
-                REVERSE -> builder.reverse()
-                SLICE, SPLICE -> builder.delete(0, operation.parameter)
+
+                REVERSE ->
+                    builder.reverse()
+
+                SLICE, SPLICE ->
+                    builder.delete(0, operation.parameter)
             }
         }
 

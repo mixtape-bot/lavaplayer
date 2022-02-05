@@ -1,11 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.track.loader
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
-import com.sedmelluq.discord.lavaplayer.track.loader.message.ItemLoaderMessage
 import com.sedmelluq.discord.lavaplayer.track.loader.message.ItemLoaderMessages
-import kotlin.reflect.KClass
 
 data class LoaderState(
     /**
@@ -19,10 +15,6 @@ data class LoaderState(
     val messages: ItemLoaderMessages
 ) {
     companion object {
-        val NONE = LoaderState(AudioReference.NO_TRACK, object : ItemLoaderMessages {
-            override fun send(message: ItemLoaderMessage): Boolean = false
-            override fun <T : ItemLoaderMessage> on(clazz: KClass<T>, block: suspend T.() -> Unit): Job = NonCancellable
-            override fun shutdown() = Unit
-        })
+        val NONE = LoaderState(AudioReference.NO_TRACK, ItemLoaderMessages.None)
     }
 }

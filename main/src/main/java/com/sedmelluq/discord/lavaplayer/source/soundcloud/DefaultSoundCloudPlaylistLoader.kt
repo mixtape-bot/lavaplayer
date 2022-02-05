@@ -1,12 +1,20 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud
 
-import com.sedmelluq.discord.lavaplayer.source.common.TrackCollectionLoader
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
+import com.sedmelluq.discord.lavaplayer.source.common.AudioTrackCollectionLoader
+import com.sedmelluq.discord.lavaplayer.tools.extensions.toRuntimeException
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager
-import com.sedmelluq.discord.lavaplayer.track.*
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackFactory
+import com.sedmelluq.discord.lavaplayer.track.collection.AudioTrackCollection
+import com.sedmelluq.discord.lavaplayer.track.collection.Playlist
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.serializer
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.utils.URIBuilder
@@ -17,9 +25,12 @@ import java.net.URISyntaxException
 class DefaultSoundCloudPlaylistLoader(
     private val htmlDataLoader: SoundCloudHtmlDataLoader,
     private val formatHandler: SoundCloudFormatHandler
-) : TrackCollectionLoader {
+) : AudioTrackCollectionLoader {
+    @OptIn(InternalSerializationApi::class)
     companion object {
         private const val BASE_API_URL = "https://api-v2.soundcloud.com"
+        private val TRACK_LIST_SERIALIZER = ListSerializer(SoundCloudTrackModel::class.serializer())
+
         private val log = KotlinLogging.logger { }
     }
 
@@ -36,34 +47,33 @@ class DefaultSoundCloudPlaylistLoader(
                 val playlist = rootData.resources.firstNotNullOfOrNull { it.data as? SoundCloudPlaylistModel }
                     ?: return null
 
-                return BasicAudioTrackCollection(
-                    playlist.title,
-                    AudioTrackCollectionType.Playlist,
-                    loadPlaylistTracks(httpInterface, playlist, trackFactory),
+                return Playlist(
+                    name = playlist.title,
+                    tracks = loadPlaylistTracks(httpInterface, playlist, trackFactory),
+                    isAlbum = playlist.isAlbum
                 )
             }
         } catch (e: IOException) {
-            throw FriendlyException(
-                "Loading playlist from SoundCloud failed.",
-                FriendlyException.Severity.SUSPICIOUS,
-                e
-            )
+            friendlyError("Loading playlist from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 
+    @OptIn(InternalSerializationApi::class)
     @Throws(IOException::class)
     private fun loadPlaylistTracks(
         httpInterface: HttpInterface,
         playlist: SoundCloudPlaylistModel,
         trackFactory: AudioTrackFactory
     ): MutableList<AudioTrack> {
-        val trackIds = playlist.tracks.map { it.id }
+        val trackIds = playlist.tracks.map(SoundCloudTrackModel::id)
         val trackDataList = mutableListOf<SoundCloudTrackModel>()
+
         for (i in trackIds.indices step 50) {
             val tracks = trackIds.subList(i, (i + 50).coerceAtMost(trackIds.size))
             httpInterface.execute(HttpGet(buildTrackListUrl(tracks))).use { response ->
                 HttpClientTools.assertSuccessWithContent(response, "track list response")
-                val trackList = response.entity.content.decodeJson<List<SoundCloudTrackModel>>()
+
+                val trackList = JsonTools.decode(TRACK_LIST_SERIALIZER, response.entity.content)
                 trackDataList.addAll(trackList)
             }
         }
@@ -98,7 +108,7 @@ class DefaultSoundCloudPlaylistLoader(
                 .addParameter("ids", trackIds.joinToString(","))
                 .build()
         } catch (e: URISyntaxException) {
-            throw RuntimeException(e)
+            throw e.toRuntimeException()
         }
     }
 

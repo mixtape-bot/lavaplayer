@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import java.io.IOException
 
 /**

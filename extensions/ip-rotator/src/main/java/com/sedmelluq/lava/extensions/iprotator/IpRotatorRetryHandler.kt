@@ -7,7 +7,7 @@ import java.io.IOException
 import java.net.BindException
 import java.net.SocketException
 
-class IpRotatorRetryHandler : HttpRequestRetryHandler {
+public class IpRotatorRetryHandler : HttpRequestRetryHandler {
     override fun retryRequest(exception: IOException, executionCount: Int, context: HttpContext): Boolean {
         if (exception is BindException) {
             return false

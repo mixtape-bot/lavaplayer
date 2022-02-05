@@ -1,12 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.filter
 
-import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
+import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext
 import mu.KotlinLogging
-import java.nio.ShortBuffer
-import java.lang.InterruptedException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.ShortBuffer
 import kotlin.math.max
 import kotlin.math.min
 
@@ -16,8 +15,7 @@ import kotlin.math.min
  * @param context        Configuration and output information for processing
  * @param postProcessors Post processors to pass the final audio buffers to
  */
-class FinalPcmAudioFilter(context: AudioProcessingContext, private val postProcessors: Collection<AudioPostProcessor>) :
-    UniversalPcmAudioFilter {
+class FinalPcmAudioFilter(context: AudioProcessingContext, private val postProcessors: List<AudioPostProcessor>) : UniversalPcmAudioFilter {
     companion object {
         private val log = KotlinLogging.logger { }
         private val zeroPadding = ShortArray(128)

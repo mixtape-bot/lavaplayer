@@ -33,15 +33,12 @@ class OpusAudioDataFormat(
     override val silenceBytes: ByteArray
         get() = SILENT_OPUS_FRAME
 
-    override fun createDecoder(): AudioChunkDecoder {
-        return OpusChunkDecoder(this)
-    }
+    override fun createDecoder(): AudioChunkDecoder =
+        OpusChunkDecoder(this)
 
-    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder {
-        return OpusChunkEncoder(configuration, this)
-    }
+    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder =
+        OpusChunkEncoder(configuration, this)
 
-    override fun equals(other: Any?): Boolean {
-        return this === other || other != null && javaClass == other.javaClass && super.equals(other)
-    }
+    override fun equals(other: Any?): Boolean =
+        this === other || other != null && javaClass == other.javaClass && super.equals(other)
 }

@@ -1,6 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.track
 
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarker
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 
 /**
  * A playable audio track
@@ -55,6 +57,13 @@ interface AudioTrack : AudioItem {
      * @return Clone of this track which does not share the execution state of this track
      */
     fun makeClone(): AudioTrack?
+
+    /**
+     * @return Clone of this track which does not share:
+     * - the execution state of this track
+     * - the share the user data of this track
+     */
+    fun makeShallowClone(): AudioTrack?
 
     /**
      * @param marker Track position marker to place

@@ -1,10 +1,11 @@
 package lavaplayer.demo;
 
-import com.sedmelluq.discord.lavaplayer.filter.ResamplingPcmAudioFilter;
-import com.sedmelluq.discord.lavaplayer.filter.ResamplingQuality;
+import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.natives.samplerate.SampleRateConverter;
+import com.sedmelluq.discord.lavaplayer.track.AudioItem;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoadResult;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
 import lavaplayer.demo.controller.BotCommandMappingHandler;
@@ -42,10 +43,7 @@ public class BotApplicationManager extends ListenerAdapter {
 
         controllerManager.registerController(new MusicController.Factory());
 
-        ResamplingPcmAudioFilter.RESAMPLING_VALUES.replace(ResamplingQuality.HIGH, SampleRateConverter.ResamplingType.SINC_BEST_QUALITY);
-
         playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setResamplingQuality(ResamplingQuality.HIGH);
         playerManager.getConfiguration().useFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
 
         registerRemoteSources(playerManager);

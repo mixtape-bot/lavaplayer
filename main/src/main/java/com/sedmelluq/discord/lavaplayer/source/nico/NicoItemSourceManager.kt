@@ -1,16 +1,18 @@
 package com.sedmelluq.discord.lavaplayer.source.nico
 
-import kotlinx.atomicfu.atomic
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.extensions.UrlEncodedFormEntity
+import com.sedmelluq.discord.lavaplayer.tools.extensions.parseMilliseconds
 import com.sedmelluq.discord.lavaplayer.tools.io.*
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
+import kotlinx.atomicfu.atomic
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.jsoup.Jsoup
@@ -18,14 +20,12 @@ import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
 import java.io.DataInput
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /**
  * Audio source manager that implements finding NicoNico tracks based on URL.
  */
-class NicoItemSourceManager(private val email: String, private val password: String) : ItemSourceManager,
-    HttpConfigurable {
+class NicoItemSourceManager(private val email: String, private val password: String) : ItemSourceManager, HttpConfigurable {
     companion object {
         private const val TRACK_URL_REGEX = """^https?://(?:www\.)?nicovideo\.jp/watch/(sm[0-9]+)(?:\?.*)?$"""
         private val trackUrlPattern = Pattern.compile(TRACK_URL_REGEX)
@@ -60,24 +60,14 @@ class NicoItemSourceManager(private val email: String, private val password: Str
                         throw IOException("Unexpected response code $statusCode")
                     }
 
-                    val location = response.getFirstHeader("Location")
-                    if (location == null || location.value.contains("message=")) {
-                        throw FriendlyException(
-                            "Login details for NicoNico are invalid.",
-                            FriendlyException.Severity.COMMON,
-                            null
-                        )
-                    }
+                    response.getFirstHeader("Location")?.takeUnless { it.value.contains("message=") }
+                        ?: friendlyError("Login details for NicoNico are invalid.")
 
                     loggedIn = true
                 }
             }
         } catch (e: IOException) {
-            throw FriendlyException(
-                "Exception when trying to log into NicoNico",
-                FriendlyException.Severity.SUSPICIOUS,
-                e
-            )
+            friendlyError("Exception when trying to log into NicoNico", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 
@@ -85,20 +75,18 @@ class NicoItemSourceManager(private val email: String, private val password: Str
         true
 
     @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack =
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack =
         NicoAudioTrack(trackInfo, this)
+
+    override fun configureRequests(configurator: RequestConfigurator) =
+        httpInterfaceManager.configureRequests(configurator)
+
+    override fun configureBuilder(configurator: BuilderConfigurator) =
+        httpInterfaceManager.configureBuilder(configurator)
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val trackMatcher = trackUrlPattern.matcher(reference.identifier)
         return if (trackMatcher.matches()) loadTrack(trackMatcher.group(1)) else null
-    }
-
-    override fun configureRequests(configurator: RequestConfigurator) {
-        httpInterfaceManager.configureRequests(configurator)
-    }
-
-    override fun configureBuilder(configurator: BuilderConfigurator) {
-        httpInterfaceManager.configureBuilder(configurator)
     }
 
     private fun loadTrack(videoId: String): AudioTrack {
@@ -112,35 +100,26 @@ class NicoItemSourceManager(private val email: String, private val password: Str
                     }
 
                     val document =
-                        Jsoup.parse(response.entity.content, StandardCharsets.UTF_8.name(), "", Parser.xmlParser())
+                        Jsoup.parse(response.entity.content, Charsets.UTF_8.name(), "", Parser.xmlParser())
 
                     return extractTrackFromXml(videoId, document)!!
                 }
             }
         } catch (e: IOException) {
-            throw FriendlyException(
-                "Error occurred when extracting video info.",
-                FriendlyException.Severity.SUSPICIOUS,
-                e
-            )
+            friendlyError("Error occurred when extracting video info.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 
     private fun extractTrackFromXml(videoId: String, document: Document): AudioTrack? {
         for (element in document.select(":root > thumb")) {
-            val uploader = element.select("user_nickname").first()!!.text()
-            val title = element.select("title").first()!!.text()
-            val artworkUrl = element.select("thumbnail_url").first()!!.text()
-            val duration = DataFormatTools.durationTextToMillis(element.select("length").first()!!.text())
-
-            val trackInfo = AudioTrackInfo(
-                title,
-                uploader,
-                duration,
-                videoId,
-                getWatchUrl(videoId),
-                artworkUrl,
-                false
+            val trackInfo = BasicAudioTrackInfo(
+                title = element.select("title").first()!!.text(),
+                author  = element.select("user_nickname").first()!!.text(),
+                length = element.select("length").first()!!.text().parseMilliseconds(),
+                identifier = videoId,
+                uri = getWatchUrl(videoId),
+                artworkUrl = element.select("thumbnail_url").first()!!.text(),
+                isStream = false
             )
 
             return NicoAudioTrack(trackInfo, this)

@@ -8,9 +8,9 @@ import com.sedmelluq.discord.lavaplayer.tools.io.ChainedInputStream
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.NonSeekableInputStream
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import java.io.IOException
@@ -28,7 +28,7 @@ class SoundCloudM3uAudioTrack(
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         createSegmentTracker().use { segmentTracker ->
             segmentTracker.decoder!!.prepareStream(true)
             executor.executeProcessingLoop({
@@ -86,7 +86,7 @@ class SoundCloudM3uAudioTrack(
         }
 
         fun setupDecoder(factory: SoundCloudSegmentDecoder.Factory) {
-            decoder = factory.create { createChainedStream() }
+            decoder = factory.create(::createChainedStream)
         }
 
         @Throws(IOException::class)

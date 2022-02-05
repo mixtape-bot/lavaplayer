@@ -7,13 +7,7 @@ import java.nio.ShortBuffer
 internal class OpusDecoderLibrary private constructor() {
     external fun create(sampleRate: Int, channels: Int): Long
     external fun destroy(instance: Long)
-    external fun decode(
-        instance: Long,
-        directInput: ByteBuffer?,
-        inputSize: Int,
-        directOutput: ShortBuffer?,
-        frameSize: Int
-    ): Int
+    external fun decode(instance: Long, directInput: ByteBuffer, inputSize: Int, directOutput: ShortBuffer, frameSize: Int): Int
 
     companion object {
         @JvmStatic

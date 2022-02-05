@@ -1,10 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.track.loader
 
-import kotlinx.coroutines.*
-import com.sedmelluq.lava.common.tools.DaemonThreadFactory
-import com.sedmelluq.lava.common.tools.ExecutorTools
 import com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.lava.common.tools.DaemonThreadFactory
+import com.sedmelluq.lava.common.tools.ExecutorTools
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -18,27 +21,31 @@ open class DefaultItemLoaderFactory(internal val sourceRegistry: SourceRegistry)
             30L,
             TimeUnit.SECONDS,
             SynchronousQueue(false),
-            DaemonThreadFactory("lavaplayer item-loader")
+            DaemonThreadFactory("track-info")
         )
     }
 
-    private val loaderThreadPool = createThreadPool()
-    private val loaderDispatcher = loaderThreadPool.asCoroutineDispatcher()
+    private val threadPool = createThreadPool()
+    internal val dispatcher = threadPool.asCoroutineDispatcher()
 
     override val coroutineContext: CoroutineContext
-        get() = loaderDispatcher + SupervisorJob() + CoroutineName("Item Loader Factory")
+        get() = dispatcher + SupervisorJob() + CoroutineName("Item Loader Factory")
 
     override var itemLoaderPoolSize: Int
-        get() = loaderThreadPool.poolSize
+        get() = threadPool.poolSize
         set(value) {
-            loaderThreadPool.maximumPoolSize = value
+            threadPool.maximumPoolSize = value
         }
 
     override fun createItemLoader(reference: AudioReference): ItemLoader {
         return DefaultItemLoader(reference, this)
     }
 
+    fun createItemLoader(reference: AudioReference, resultHandler: ItemLoadResultHandler? = null): ItemLoader {
+        return DefaultItemLoader(reference, this, resultHandler)
+    }
+
     override fun shutdown() {
-        ExecutorTools.shutdownExecutor(loaderThreadPool, "track info")
+        ExecutorTools.shutdownExecutor(threadPool, "track info")
     }
 }

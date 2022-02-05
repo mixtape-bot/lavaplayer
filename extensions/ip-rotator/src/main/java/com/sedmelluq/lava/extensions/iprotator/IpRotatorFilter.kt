@@ -11,15 +11,15 @@ import org.apache.http.client.methods.HttpUriRequest
 import org.apache.http.client.protocol.HttpClientContext
 import java.net.BindException
 
-class IpRotatorFilter @JvmOverloads constructor(
+public class IpRotatorFilter @JvmOverloads constructor(
     delegate: HttpContextFilter?,
     private val isSearch: Boolean,
     private val routePlanner: AbstractRoutePlanner,
     private val retryLimit: Int,
     retryCountAttribute: String = RETRY_COUNT_ATTRIBUTE
 ) : AbstractHttpContextFilter(delegate) {
-    companion object {
-        const val RETRY_COUNT_ATTRIBUTE = "retry-counter"
+    public companion object {
+        public const val RETRY_COUNT_ATTRIBUTE: String = "retry-counter"
 
         private val log = KotlinLogging.logger {}
     }

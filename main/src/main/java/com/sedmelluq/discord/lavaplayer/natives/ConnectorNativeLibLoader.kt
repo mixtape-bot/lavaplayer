@@ -8,10 +8,10 @@ import com.sedmelluq.lava.common.natives.architecture.DefaultOperatingSystemType
  */
 object ConnectorNativeLibLoader {
     private val loaders = listOf(
-        NativeLibraryLoader.createFiltered(ConnectorNativeLibLoader::class.java, "libmpg123-0") {
+        NativeLibraryLoader.createFiltered("libmpg123-0", ConnectorNativeLibLoader::class.java) {
             it.osType === DefaultOperatingSystemTypes.WINDOWS
         },
-        NativeLibraryLoader.create(ConnectorNativeLibLoader::class.java, "connector")
+        NativeLibraryLoader.create("connector", ConnectorNativeLibLoader::class.java)
     )
 
     /**

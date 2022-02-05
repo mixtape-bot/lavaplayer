@@ -1,12 +1,14 @@
 package com.sedmelluq.discord.lavaplayer.track
 
-import kotlinx.atomicfu.atomic
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarker
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioTrackExecutor
 import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame
 import com.sedmelluq.discord.lavaplayer.track.playback.PrimordialAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import kotlinx.atomicfu.atomic
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -19,7 +21,7 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
     internal var accurateDuration by atomic(0L)
 
     private val initialExecutor = PrimordialAudioTrackExecutor(info)
-    private val executorAssigned = atomic(false)
+    private var executorAssigned by atomic(false)
 
     @Volatile
     private var _activeExecutor: AudioTrackExecutor? = null
@@ -54,60 +56,48 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
             return if (accurate == 0L) info.length else accurate
         }
 
-    override fun assignExecutor(executor: AudioTrackExecutor?, applyPrimordialState: Boolean) {
-        _activeExecutor = if (executorAssigned.compareAndSet(expect = false, update = true)) {
+    override fun assignExecutor(executor: AudioTrackExecutor, applyPrimordialState: Boolean) {
+        _activeExecutor = if (!executorAssigned) {
+            executorAssigned = true
             if (applyPrimordialState) {
                 initialExecutor.applyStateToExecutor(executor)
             }
 
             executor
         } else {
-            throw IllegalStateException("Cannot play the same instance of a track twice, use track.makeClone().")
+            error("Cannot play the same instance of a track twice, use track.makeClone().")
         }
     }
 
-    override fun stop() {
-        activeExecutor.stop()
-    }
+    override fun createLocalExecutor(playerManager: AudioPlayerManager?): AudioTrackExecutor? = null
 
-    override fun setMarker(marker: TrackMarker?) {
-        activeExecutor.setMarker(marker)
-    }
+    override fun stop() = activeExecutor.stop()
 
-    override fun provide(): AudioFrame? {
-        return activeExecutor.provide()
-    }
+    override fun setMarker(marker: TrackMarker?) = activeExecutor.setMarker(marker)
 
-    @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
-        return activeExecutor.provide(timeout, unit)
-    }
+    override fun makeClone(): AudioTrack? = makeShallowClone().also { it.userData = userData }
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean {
-        return activeExecutor.provide(targetFrame)
-    }
+    override fun makeShallowClone(): AudioTrack = throw UnsupportedOperationException()
 
-    @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
-        return activeExecutor.provide(targetFrame, timeout, unit)
-    }
-
-    override fun makeClone(): AudioTrack? {
-        val track = makeShallowClone()
-        track.userData = userData
-        return track
-    }
-
-    override fun createLocalExecutor(playerManager: AudioPlayerManager?): AudioTrackExecutor? {
-        return null
-    }
-
+    @Suppress("UNCHECKED_CAST")
     override fun <T> getUserData(klass: Class<T>?): T? {
         val data = userData
         return if (data != null && klass!!.isAssignableFrom(data.javaClass)) data as? T else null
     }
 
-    protected open fun makeShallowClone(): AudioTrack {
-        throw UnsupportedOperationException()
-    }
+    /* audio frame provider */
+    override fun provide(): AudioFrame? = activeExecutor.provide()
+
+    @Throws(TimeoutException::class, InterruptedException::class)
+    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? = activeExecutor.provide(timeout, unit)
+
+    override fun provide(targetFrame: MutableAudioFrame): Boolean = activeExecutor.provide(targetFrame)
+
+    @Throws(TimeoutException::class, InterruptedException::class)
+    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean =
+        activeExecutor.provide(targetFrame, timeout, unit)
+
+    /* kotlin */
+    override fun toString(): String =
+        "${this::class.simpleName}(info=$info, position=$position, sourceManager=$sourceManager)"
 }

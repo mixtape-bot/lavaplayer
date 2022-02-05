@@ -38,13 +38,14 @@ class AudioConfiguration {
         return this
     }
 
-    fun clone(): AudioConfiguration {
+    fun copy(): AudioConfiguration {
         val copy = AudioConfiguration()
         copy.resamplingQuality = resamplingQuality
         copy.opusEncodingQuality = opusEncodingQuality
         copy.outputFormat = outputFormat
         copy.filterHotSwapEnabled = filterHotSwapEnabled
         copy.frameBufferFactory = frameBufferFactory
+
         return copy
     }
 }

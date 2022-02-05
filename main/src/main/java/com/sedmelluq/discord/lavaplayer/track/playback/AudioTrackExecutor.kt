@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.track.playback
 
-import com.sedmelluq.discord.lavaplayer.track.TrackStateListener
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackState
-import com.sedmelluq.discord.lavaplayer.track.TrackMarker
+import com.sedmelluq.discord.lavaplayer.track.TrackStateListener
+import com.sedmelluq.discord.lavaplayer.track.marker.TrackMarker
 
 /**
  * Executor which handles track execution and all operations on playing tracks.
@@ -28,7 +28,7 @@ interface AudioTrackExecutor : AudioFrameProvider {
      *
      * @param listener Listener for track state events
      */
-    fun execute(listener: TrackStateListener?)
+    suspend fun execute(listener: TrackStateListener)
 
     /**
      * Stop playing the track, terminating the thread that is filling the frame buffer.

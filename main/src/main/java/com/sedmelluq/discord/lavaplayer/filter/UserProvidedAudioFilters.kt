@@ -46,7 +46,7 @@ open class UserProvidedAudioFilters(
 
     @Throws(InterruptedException::class)
     private fun checkRebuild() {
-        if (hotSwapEnabled && context.playerOptions.filterFactory !== chain.context) {
+        if (hotSwapEnabled && context.resources.filterFactory !== chain.context) {
             flush()
             close()
             chain = buildFragment(context, nextFilter)
@@ -58,7 +58,7 @@ open class UserProvidedAudioFilters(
             context: AudioProcessingContext,
             nextFilter: UniversalPcmAudioFilter
         ): AudioFilterChain {
-            val factory = context.playerOptions.filterFactory
+            val factory = context.resources.filterFactory
                 ?: return AudioFilterChain(nextFilter, emptyList(), null)
 
             val filters = factory

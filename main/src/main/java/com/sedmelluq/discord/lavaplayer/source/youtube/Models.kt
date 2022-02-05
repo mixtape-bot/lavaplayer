@@ -1,11 +1,11 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
+import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools
+import com.sedmelluq.discord.lavaplayer.tools.extensions.parseMilliseconds
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
-import com.sedmelluq.discord.lavaplayer.tools.ThumbnailTools
 
 @Serializable
 data class YouTubeVideoModel @OptIn(ExperimentalSerializationApi::class) constructor(
@@ -31,7 +31,7 @@ data class YouTubeVideoModel @OptIn(ExperimentalSerializationApi::class) constru
 
     val length: Long?
         get() = lengthSeconds?.let { it.toLong() * 1000 }
-            ?: lengthRuns?.runs?.firstOrNull()?.text?.let { DataFormatTools.durationTextToMillis(it) }
+            ?: lengthRuns?.runs?.firstOrNull()?.text?.parseMilliseconds()
 
     val thumbnail: String
         get() = _thumbnail.thumbnails.maxByOrNull { it.width + it.height }?.url

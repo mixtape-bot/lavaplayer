@@ -9,23 +9,23 @@ import java.util.concurrent.ThreadFactory
  * Thread factory for daemon threads.
  *
  * @param name         Name that will be included in thread names.
+ * @param nameFormat   The name format to use.
  * @param exitCallback Runnable to be executed when the thread exits.
- * @param nameFormat   Runnable to be executed when the thread exits.
  */
 public class DaemonThreadFactory @JvmOverloads constructor(
     name: String?,
+    nameFormat: String? = DEFAULT_NAME_FORMAT,
     exitCallback: Runnable? = null,
-    nameFormat: String? = DEFAULT_NAME_FORMAT
 ) : ThreadFactory {
     public companion object {
         private val log = KotlinLogging.logger {  }
-        private var poolNumber by atomic(1)
+        private var poolNumber by atomic(0)
 
         public var DEFAULT_NAME_FORMAT: String = "lava-daemon-pool-%s-%d-thread-"
     }
 
     private val group: ThreadGroup
-    private var threadNumber by atomic(1)
+    private var threadNumber by atomic(0)
     private val namePrefix: String
     private val exitCallback: Runnable?
 

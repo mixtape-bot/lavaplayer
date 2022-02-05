@@ -45,8 +45,6 @@ interface AudioFrame {
      * @param offset Offset in the buffer to start writing at.
      */
     fun getData(buffer: ByteArray, offset: Int)
-}
 
-operator fun AudioFrame.get(buffer: ByteArray, offset: Int) {
-    return getData(buffer, offset)
+    operator fun get(buffer: ByteArray, offset: Int = 0) = getData(buffer, offset)
 }

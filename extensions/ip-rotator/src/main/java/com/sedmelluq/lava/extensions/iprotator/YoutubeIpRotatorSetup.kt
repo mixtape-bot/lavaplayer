@@ -8,13 +8,13 @@ import com.sedmelluq.discord.lavaplayer.tools.extensions.source
 import com.sedmelluq.discord.lavaplayer.tools.http.ExtendedHttpConfigurable
 import com.sedmelluq.discord.lavaplayer.tools.http.HttpContextFilter
 
-class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup(routePlanner) {
-    companion object {
+public class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup(routePlanner) {
+    public companion object {
         private const val DEFAULT_RETRY_LIMIT = 4
         private val DEFAULT_DELEGATE: HttpContextFilter = YoutubeHttpContextFilter()
         private val RETRY_HANDLER = IpRotatorRetryHandler()
 
-        operator fun invoke(routePlanner: AbstractRoutePlanner, build: YoutubeIpRotatorSetup.() -> Unit): YoutubeIpRotatorSetup {
+        public operator fun invoke(routePlanner: AbstractRoutePlanner, build: YoutubeIpRotatorSetup.() -> Unit): YoutubeIpRotatorSetup {
             return YoutubeIpRotatorSetup(routePlanner)
                 .apply(build)
         }
@@ -23,9 +23,9 @@ class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup
     private val mainConfiguration = mutableListOf<ExtendedHttpConfigurable>()
     private val searchConfiguration = mutableListOf<ExtendedHttpConfigurable>()
 
-    var retryLimit = DEFAULT_RETRY_LIMIT
-    var mainDelegate = DEFAULT_DELEGATE
-    var searchDelegate: HttpContextFilter? = null
+    public var retryLimit: Int = DEFAULT_RETRY_LIMIT
+    public var mainDelegate: HttpContextFilter = DEFAULT_DELEGATE
+    public var searchDelegate: HttpContextFilter? = null
 
     override val retryHandler: IpRotatorRetryHandler = RETRY_HANDLER
 
@@ -34,7 +34,7 @@ class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup
      *
      * @param sourceManager The [YoutubeItemSourceManager] to apply to.
      */
-    fun applyTo(sourceManager: YoutubeItemSourceManager): YoutubeIpRotatorSetup {
+    public fun applyTo(sourceManager: YoutubeItemSourceManager): YoutubeIpRotatorSetup {
         useConfiguration(sourceManager.mainHttpConfiguration, false)
         useConfiguration(sourceManager.searchHttpConfiguration, true)
         useConfiguration(sourceManager.searchMusicHttpConfiguration, true)
@@ -46,23 +46,23 @@ class YoutubeIpRotatorSetup(routePlanner: AbstractRoutePlanner) : IpRotatorSetup
      *
      * @param registry The [SourceRegistry] to apply to.
      */
-    fun applyTo(registry: SourceRegistry): YoutubeIpRotatorSetup {
+    public fun applyTo(registry: SourceRegistry): YoutubeIpRotatorSetup {
         val sourceManager = registry.source<YoutubeItemSourceManager>()
         sourceManager?.let { applyTo(it) }
         return this
     }
 
-    fun withRetryLimit(limit: Int): YoutubeIpRotatorSetup {
+    public fun withRetryLimit(limit: Int): YoutubeIpRotatorSetup {
         retryLimit = limit
         return this
     }
 
-    fun withMainDelegateFilter(filter: HttpContextFilter): YoutubeIpRotatorSetup {
+    public fun withMainDelegateFilter(filter: HttpContextFilter): YoutubeIpRotatorSetup {
         mainDelegate = filter
         return this
     }
 
-    fun withSearchDelegateFilter(filter: HttpContextFilter?): YoutubeIpRotatorSetup {
+    public fun withSearchDelegateFilter(filter: HttpContextFilter?): YoutubeIpRotatorSetup {
         searchDelegate = filter
         return this
     }

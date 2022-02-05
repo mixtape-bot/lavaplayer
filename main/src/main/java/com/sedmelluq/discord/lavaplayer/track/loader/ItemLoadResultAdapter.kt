@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.track.loader
 
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection
+import com.sedmelluq.discord.lavaplayer.track.collection.AudioTrackCollection
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
 
 open class ItemLoadResultAdapter : ItemLoadResultHandler {
     /**
@@ -37,7 +37,7 @@ open class ItemLoadResultAdapter : ItemLoadResultHandler {
             is ItemLoadResult.LoadFailed -> onLoadFailed(result.exception)
             is ItemLoadResult.TrackLoaded -> onTrackLoad(result.track)
             is ItemLoadResult.CollectionLoaded -> onCollectionLoad(result.collection)
-            else -> throw error("Unknown item load result type: ${result::class.qualifiedName}")
+            else -> error("Unknown item load result type: ${result::class.qualifiedName}")
         }
     }
 }

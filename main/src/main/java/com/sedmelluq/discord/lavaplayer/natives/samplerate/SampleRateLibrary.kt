@@ -2,7 +2,6 @@ package com.sedmelluq.discord.lavaplayer.natives.samplerate
 
 import com.sedmelluq.discord.lavaplayer.natives.ConnectorNativeLibLoader
 
-
 internal class SampleRateLibrary private constructor() {
     external fun create(type: Int, channels: Int): Long
 
@@ -12,19 +11,19 @@ internal class SampleRateLibrary private constructor() {
 
     external fun process(
         instance: Long,
-        `in`: FloatArray?,
-        inOffset: Int,
-        inLength: Int,
-        out: FloatArray?,
-        outOffset: Int,
-        outLength: Int,
+        input: FloatArray,
+        inputOffset: Int,
+        inputLength: Int,
+        output: FloatArray,
+        outputOffset: Int,
+        outputLength: Int,
         endOfInput: Boolean,
         sourceRatio: Double,
-        progress: IntArray?
+        progress: IntArray
     ): Int
 
     companion object {
-        @kotlin.jvm.JvmStatic
+        @JvmStatic
         val instance: SampleRateLibrary
             get() {
                 ConnectorNativeLibLoader.loadConnectorLibrary()

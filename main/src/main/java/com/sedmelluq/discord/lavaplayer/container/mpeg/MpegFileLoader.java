@@ -203,7 +203,7 @@ public class MpegFileLoader {
                 MpegSectionInfo codec = reader.nextChild(stsd);
                 trackInfo.setCodecName(codec.type);
 
-                if ("soun".equals(trackInfo.getHandler())) {
+                if (MpegConstants.AUDIO_HANDLER.equals(trackInfo.getHandler())) {
                     parseSoundTrackCodec(codec, trackInfo);
                 }
             }

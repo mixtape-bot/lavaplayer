@@ -1,13 +1,13 @@
 package com.sedmelluq.discord.lavaplayer.manager
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry
 import com.sedmelluq.discord.lavaplayer.tools.io.BuilderConfigurator
 import com.sedmelluq.discord.lavaplayer.tools.io.RequestConfigurator
-import com.sedmelluq.discord.lavaplayer.track.TrackEncoder
+import com.sedmelluq.discord.lavaplayer.track.encoder.TrackEncoder
 import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoaderFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -31,7 +31,7 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
      * Seek ghosting is the effect where while a seek is in progress, buffered audio from the previous location will be
      * served until seek is ready or the buffer is empty.
      */
-    val isUsingSeekGhosting: Boolean
+    var isUsingSeekGhosting: Boolean
 
     /**
      * Audio processing configuration used for tracks executed by this manager.
@@ -55,11 +55,6 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
     fun enableGcMonitoring()
 
     /**
-     * @param useSeekGhosting The new state of seek ghosting
-     */
-    fun setUseSeekGhosting(useSeekGhosting: Boolean)
-
-    /**
      * Sets the threshold for how long a track can be stuck until the TrackStuckEvent is sent out. A track is considered
      * to be stuck if the player receives requests for audio samples from the track, but the audio frame provider of that
      * track has been returning no data for the specified time.
@@ -71,9 +66,9 @@ interface AudioPlayerManager : TrackEncoder, SourceRegistry, CoroutineScope {
     /**
      * Sets the threshold for clearing an audio player when it has not been queried for the specified amount of time.
      *
-     * @param cleanupThreshold The threshold in milliseconds.
+     * @param newValue The new threshold to use (in milliseconds).
      */
-    fun setPlayerCleanupThreshold(cleanupThreshold: Long)
+    fun setPlayerCleanupThreshold(newValue: Long)
 
     /**
      * @return New audio player.

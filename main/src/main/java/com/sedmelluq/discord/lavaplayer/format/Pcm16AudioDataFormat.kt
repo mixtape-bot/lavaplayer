@@ -24,7 +24,7 @@ class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount:
     override val silenceBytes: ByteArray = ByteArray(channelCount * chunkSampleCount * 2)
 
     override val codecName: String
-        get() = CODEC_NAME_BE
+        get() = if (bigEndian) CODEC_NAME_BE else CODEC_NAME_LE
 
     override val expectedChunkSize: Int
         get() = silenceBytes.size
@@ -32,17 +32,14 @@ class Pcm16AudioDataFormat(channelCount: Int, sampleRate: Int, chunkSampleCount:
     override val maximumChunkSize: Int
         get() = silenceBytes.size
 
-    override fun createDecoder(): AudioChunkDecoder {
-        return PcmChunkDecoder(this, bigEndian)
-    }
+    override fun createDecoder(): AudioChunkDecoder =
+        PcmChunkDecoder(this, bigEndian)
 
-    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder {
-        return PcmChunkEncoder(this, bigEndian)
-    }
+    override fun createEncoder(configuration: AudioConfiguration): AudioChunkEncoder =
+        PcmChunkEncoder(this, bigEndian)
 
-    override fun equals(other: Any?): Boolean {
-        return this === other || other != null && javaClass == other.javaClass && super.equals(other)
-    }
+    override fun equals(other: Any?): Boolean =
+        this === other || other != null && javaClass == other.javaClass && super.equals(other)
 
     override fun hashCode(): Int {
         var result = super.hashCode()

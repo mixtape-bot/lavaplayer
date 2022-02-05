@@ -1,9 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.manager.event
 
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
 
 /**
  * Adapter for different event handlers as method overrides

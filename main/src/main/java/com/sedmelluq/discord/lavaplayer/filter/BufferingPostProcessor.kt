@@ -12,8 +12,7 @@ import java.nio.ShortBuffer
  * @param context Processing context to determine the destination buffer from.
  * @param encoder Encoder to encode the chunk with.
  */
-class BufferingPostProcessor(private val context: AudioProcessingContext, private val encoder: AudioChunkEncoder) :
-    AudioPostProcessor {
+class BufferingPostProcessor(private val context: AudioProcessingContext, private val encoder: AudioChunkEncoder) : AudioPostProcessor {
     private val offeredFrame = MutableAudioFrame()
     private val outputBuffer = ByteBuffer.allocateDirect(context.outputFormat.maximumChunkSize)
 
@@ -26,7 +25,7 @@ class BufferingPostProcessor(private val context: AudioProcessingContext, privat
         outputBuffer.clear()
         encoder.encode(buffer, outputBuffer)
         offeredFrame.timecode = timecode
-        offeredFrame.volume = context.playerOptions.volumeLevel
+        offeredFrame.volume = context.resources.volumeLevel
         offeredFrame.setBuffer(outputBuffer)
         context.frameBuffer.consume(offeredFrame)
     }

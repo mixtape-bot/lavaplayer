@@ -1,13 +1,20 @@
 package com.sedmelluq.discord.lavaplayer.source.bandcamp
 
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.extractBetween
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
+import com.sedmelluq.discord.lavaplayer.tools.extensions.closeWithWarnings
 import com.sedmelluq.discord.lavaplayer.tools.io.*
-import com.sedmelluq.discord.lavaplayer.track.*
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
+import com.sedmelluq.discord.lavaplayer.track.AudioItem
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.collection.Playlist
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.common.tools.exception.wrapUnfriendlyException
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
@@ -48,12 +55,12 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
     }
 
     @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack {
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack {
         return BandcampAudioTrack(trackInfo, this)
     }
 
     override fun shutdown() {
-        ExceptionTools.closeWithWarnings(httpInterfaceManager)
+        httpInterfaceManager.closeWithWarnings()
     }
 
     override fun configureRequests(configurator: RequestConfigurator) {
@@ -66,16 +73,10 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
 
     @Throws(IOException::class)
     internal fun readTrackListInformation(text: String?): BandcampTrackListModel {
-        val trackInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
-            ?: throw FriendlyException(
-                "Track information not found on the Bandcamp page.",
-                FriendlyException.Severity.SUSPICIOUS,
-                null
-            )
+        val trackInfoJson = DataFormatTools.extractBetween(text!!, "data-tralbum=\"", "\"")
+            ?: friendlyError("Track information not found on the Bandcamp page.", FriendlyException.Severity.SUSPICIOUS)
 
-        return trackInfoJson
-            .replace("&quot;", "\"")
-            .decodeJson()
+        return JsonTools.decode(trackInfoJson.replace("&quot;", "\""))
     }
 
     private fun parseUrl(url: String): UrlInfo? {
@@ -88,7 +89,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
     }
 
     private fun loadTrack(urlInfo: UrlInfo): AudioItem? {
-        return extractFromPage(urlInfo.fullUrl) { _: HttpInterface?, text: String? ->
+        return extractFromPage(urlInfo.fullUrl) { _, text ->
             val trackList = readTrackListInformation(text)
 
             extractTrack(trackList.trackInfo.first(), trackList, urlInfo.baseUrl)
@@ -96,19 +97,14 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
     }
 
     private fun loadAlbum(urlInfo: UrlInfo): AudioItem? {
-        return extractFromPage(urlInfo.fullUrl) { _: HttpInterface?, text: String? ->
+        return extractFromPage(urlInfo.fullUrl) { _, text ->
             val trackList = readTrackListInformation(text)
             val tracks: MutableList<AudioTrack> = trackList.trackInfo
                 .map { extractTrack(it, trackList, urlInfo.baseUrl) }
                 .toMutableList()
 
             val albumInfo = readAlbumInformation(text)
-            BasicAudioTrackCollection(
-                albumInfo.current.title,
-                AudioTrackCollectionType.Album(trackList.artist),
-                tracks,
-                null
-            )
+            Playlist(albumInfo.current.title, tracks, isAlbum = true)
         }
     }
 
@@ -117,7 +113,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
         trackList: BandcampTrackListModel,
         bandUrl: String
     ): AudioTrack {
-        val info = AudioTrackInfo(
+        val info = BasicAudioTrackInfo(
             title = trackInfo.title,
             author = trackList.artist,
             length = (trackInfo.duration * 1000.0).toLong(),
@@ -131,16 +127,10 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
 
     @Throws(IOException::class)
     private fun readAlbumInformation(text: String?): BandcampTrackListModel {
-        val albumInfoJson = extractBetween(text!!, "data-tralbum=\"", "\"")
-            ?: throw FriendlyException(
-                "Album information not found on the Bandcamp page.",
-                FriendlyException.Severity.SUSPICIOUS,
-                null
-            )
+        val albumInfoJson = DataFormatTools.extractBetween(text!!, "data-tralbum=\"", "\"")
+            ?: friendlyError("Album information not found on the Bandcamp page.", FriendlyException.Severity.SUSPICIOUS)
 
-        return albumInfoJson
-            .replace("&quot;", "\"")
-            .decodeJson()
+        return JsonTools.decode(albumInfoJson.replace("&quot;", "\""))
     }
 
     private fun extractFromPage(url: String?, extractor: AudioItemExtractor): AudioItem? {
@@ -149,11 +139,7 @@ class BandcampItemSourceManager : ItemSourceManager, HttpConfigurable {
                 .get()
                 .use { httpInterface -> return extractFromPageWithInterface(httpInterface, url, extractor) }
         } catch (e: Exception) {
-            throw ExceptionTools.wrapUnfriendlyException(
-                "Loading information for a Bandcamp track failed.",
-                FriendlyException.Severity.FAULT,
-                e
-            )
+            throw e.wrapUnfriendlyException("Loading information for a Bandcamp track failed.", FriendlyException.Severity.FAULT)
         }
     }
 

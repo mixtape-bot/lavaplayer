@@ -1,7 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.matroska
 
 import com.sedmelluq.discord.lavaplayer.container.matroska.format.MatroskaFileTrack
-import java.lang.Exception
 import java.nio.ByteBuffer
 
 /**

@@ -1,6 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.track.playback
 
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
+import com.sedmelluq.discord.lavaplayer.tools.extensions.keepInterrupted
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -18,10 +18,10 @@ object AudioFrameProviderTools {
         try {
             return provider.provide(0, TimeUnit.MILLISECONDS)
         } catch (e: TimeoutException) {
-            ExceptionTools.keepInterrupted(e)
+            e.keepInterrupted()
             throw RuntimeException(e)
         } catch (e: InterruptedException) {
-            ExceptionTools.keepInterrupted(e)
+            e.keepInterrupted()
             throw RuntimeException(e)
         }
     }

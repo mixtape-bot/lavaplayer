@@ -3,13 +3,13 @@ package com.sedmelluq.discord.lavaplayer.source.youtube
 import com.sedmelluq.discord.lavaplayer.source.common.Extractor
 import com.sedmelluq.discord.lavaplayer.source.common.ExtractorContext
 import com.sedmelluq.discord.lavaplayer.source.common.LinkRouter
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.extensions.isLink
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
+import com.sedmelluq.lava.common.tools.exception.friendlyError
 import org.apache.http.client.utils.URIBuilder
 import java.net.URISyntaxException
 
-class DefaultYoutubeLinkRouter : LinkRouter.UsingExtractors<YoutubeLinkRoutes> {
+class DefaultYoutubeLinkRouter : LinkRouter.Extracted<YoutubeLinkRoutes> {
     companion object {
         private const val SEARCH_PREFIX = "ytsearch:"
         private const val SEARCH_MUSIC_PREFIX = "ytmsearch:"
@@ -22,17 +22,17 @@ class DefaultYoutubeLinkRouter : LinkRouter.UsingExtractors<YoutubeLinkRoutes> {
         private val directVideoIdPattern = "^$VIDEO_ID_REGEX$".toPattern()
 
         private fun getUrlInfo(url: String, retryValidPart: Boolean): UrlInfo {
-            val url = if (!url.isLink()) "https://$url" else url
+            val actualUrl  = if (!url.isLink()) "https://$url" else url
             return try {
-                val builder = URIBuilder(url)
+                val builder = URIBuilder(actualUrl)
                 UrlInfo(builder.path, builder.queryParams
                     .filterNot { it.value == null }
                     .associate { it.name to it.value })
             } catch (e: URISyntaxException) {
                 if (retryValidPart) {
-                    getUrlInfo(url.substring(0, e.index - 1), false)
+                    getUrlInfo(actualUrl.substring(0, e.index - 1), false)
                 } else {
-                    throw FriendlyException("Not a valid URL: $url", FriendlyException.Severity.COMMON, e)
+                    friendlyError("Not a valid URL: $actualUrl", cause = e)
                 }
             }
         }
@@ -41,12 +41,12 @@ class DefaultYoutubeLinkRouter : LinkRouter.UsingExtractors<YoutubeLinkRoutes> {
     override val extractors = listOf(
         Extractor("^$SEARCH_PREFIX.+".toPattern(), ::routeSearch),
         Extractor("^$SEARCH_MUSIC_PREFIX.+".toPattern(), ::routeMusicSearch),
-        Extractor(directVideoIdPattern, ::routeDirectTrack),
         Extractor("^$PLAYLIST_ID_REGEX$".toPattern(), ::routeDirectPlaylist),
-        Extractor("^$PROTOCOL_REGEX$DOMAIN_REGEX/.*".toPattern(), ::routeFromMainDomain),
-        Extractor("^$PROTOCOL_REGEX$SHORT_DOMAIN_REGEX/.*".toPattern(), ::routeFromShortDomain),
+        Extractor(directVideoIdPattern, ::routeDirectTrack),
         Extractor("^$PROTOCOL_REGEX$DOMAIN_REGEX/embed/.*".toPattern(), ::routeFromEmbed),
-        Extractor("^$PROTOCOL_REGEX$DOMAIN_REGEX/shorts/.*".toPattern(), ::routeFromShorts)
+        Extractor("^$PROTOCOL_REGEX$DOMAIN_REGEX/shorts/.*".toPattern(), ::routeFromShorts),
+        Extractor("^$PROTOCOL_REGEX$SHORT_DOMAIN_REGEX/.*".toPattern(), ::routeFromShortDomain),
+        Extractor("^$PROTOCOL_REGEX$DOMAIN_REGEX/.*".toPattern(), ::routeFromMainDomain),
     )
 
     private suspend fun routeFromMainDomain(routes: YoutubeLinkRoutes, context: ExtractorContext): AudioItem? {
@@ -129,12 +129,12 @@ class DefaultYoutubeLinkRouter : LinkRouter.UsingExtractors<YoutubeLinkRoutes> {
             if (playlistId.startsWith("RD")) {
                 routes.mix(playlistId, videoId)
             } else {
-                routes.playlist(urlInfo.parameters["list"]!!, videoId)
+                routes.playlist(playlistId, videoId)
             }
         } else {
             routes.track(videoId)
         }
     }
 
-    class UrlInfo(val path: String, val parameters: Map<String, String>)
+    data class UrlInfo(val path: String, val parameters: Map<String, String>)
 }

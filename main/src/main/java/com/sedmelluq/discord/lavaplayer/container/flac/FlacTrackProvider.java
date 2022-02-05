@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.container.flac;
 
+import com.sedmelluq.discord.lavaplayer.container.TrackProvider;
 import com.sedmelluq.discord.lavaplayer.container.flac.frame.FlacFrameReader;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipeline;
 import com.sedmelluq.discord.lavaplayer.filter.AudioPipelineFactory;
@@ -8,13 +9,14 @@ import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamReader;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
 /**
  * A provider of audio frames from a FLAC track.
  */
-public class FlacTrackProvider {
+public class FlacTrackProvider implements TrackProvider, Closeable {
     private final FlacTrackInfo info;
     private final SeekableInputStream inputStream;
     private final AudioPipeline downstream;
@@ -49,6 +51,7 @@ public class FlacTrackProvider {
      *
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
+    @Override
     public void provideFrames() throws InterruptedException {
         try {
             int sampleCount;
@@ -70,6 +73,7 @@ public class FlacTrackProvider {
      *
      * @param timecode The timecode in milliseconds
      */
+    @Override
     public void seekToTimecode(long timecode) {
         try {
             FlacSeekPoint seekPoint = findSeekPointForTime(timecode);
@@ -109,6 +113,7 @@ public class FlacTrackProvider {
     /**
      * Free all resources associated to processing the track.
      */
+    @Override
     public void close() {
         downstream.close();
     }

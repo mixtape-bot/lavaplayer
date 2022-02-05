@@ -36,11 +36,11 @@ interface MpegTrackConsumer {
      * Consume one chunk from the track
      *
      * @param channel Byte channel to consume from
-     * @param length  Lenth of the chunk in bytes
+     * @param length  Length of the chunk in bytes
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun consume(channel: ReadableByteChannel?, length: Int)
+    fun consume(channel: ReadableByteChannel, length: Int)
 
     /**
      * Free all resources

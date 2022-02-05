@@ -7,7 +7,8 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -26,7 +27,7 @@ object WavContainerProbe : MediaContainerProbe {
         }
 
         log.debug { "Track ${reference.identifier} is a WAV file." }
-        val trackInfo = AudioTrackInfo(
+        val trackInfo = BasicAudioTrackInfo(
             title = reference.title ?: MediaContainerDetection.UNKNOWN_TITLE,
             author = MediaContainerDetection.UNKNOWN_ARTIST,
             length = WavFileLoader(inputStream).parseHeaders().duration,

@@ -3,9 +3,8 @@ package com.sedmelluq.lava.extensions.iprotator.tools
 import java.math.BigInteger
 import java.util.*
 
-class BigRandom : Random() {
-
-    fun nextBigInt(size: Int): BigInteger {
+public class BigRandom : Random() {
+    public fun nextBigInt(size: Int): BigInteger {
         if (size < 32) {
             return next(31).toBigInteger();
         }
@@ -24,5 +23,4 @@ class BigRandom : Random() {
 
         return value;
     }
-
 }

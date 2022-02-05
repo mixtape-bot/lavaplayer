@@ -4,11 +4,12 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.extensions.create
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfoBuilder
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -37,7 +38,7 @@ object MpegContainerProbe : MediaContainerProbe {
         val fileReader = file.loadReader(MpegNoopTrackConsumer(audioTrack))
             ?: return MediaContainerDetectionResult.unsupportedFormat(this, "MP4 file uses an unsupported format.")
 
-        val trackInfo = create(reference, inputStream) {
+        val trackInfo = AudioTrackInfoBuilder.create(reference, inputStream) {
             title = file.getTextMetadata("Title")
             author = file.getTextMetadata("Artist")
             length = fileReader.duration
@@ -48,10 +49,14 @@ object MpegContainerProbe : MediaContainerProbe {
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false
 
-    override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =
+    override fun createTrack(
+        parameters: String?,
+        trackInfo: AudioTrackInfo,
+        inputStream: SeekableInputStream
+    ): AudioTrack =
         MpegAudioTrack(trackInfo, inputStream)
 
     private fun getSupportedAudioTrack(file: MpegFileLoader): MpegTrackInfo? {
-        return file.trackList.firstOrNull { it.handler == "soun" && it.codecName == "mp4a" }
+        return file.trackList.firstOrNull { it.handler == MpegConstants.AUDIO_HANDLER && it.codecName == MpegConstants.CODEC_NAME }
     }
 }

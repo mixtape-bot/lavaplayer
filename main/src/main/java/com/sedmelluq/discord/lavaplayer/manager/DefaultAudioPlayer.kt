@@ -1,16 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.manager
 
-import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.runBlocking
 import com.sedmelluq.discord.lavaplayer.filter.PcmFilterFactory
 import com.sedmelluq.discord.lavaplayer.manager.event.*
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
+import com.sedmelluq.discord.lavaplayer.tools.extensions.keepInterrupted
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason.*
@@ -20,6 +12,11 @@ import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProviderTools
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
 import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -27,7 +24,10 @@ import kotlin.coroutines.CoroutineContext
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
  */
-class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : AudioPlayer, TrackStateListener, CoroutineScope {
+class DefaultAudioPlayer(
+    private val manager: DefaultAudioPlayerManager,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default
+) : AudioPlayer, TrackStateListener, CoroutineScope {
     companion object {
         private val log = KotlinLogging.logger { }
     }
@@ -35,29 +35,28 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
     private var _paused by atomic(false)
     private val trackSwitchLock = Any()
     private val resources = AudioPlayerResources()
-    private val eventFlow = MutableSharedFlow<AudioEvent>(extraBufferCapacity = 1)
+    private val eventFlow = MutableSharedFlow<AudioEvent>(extraBufferCapacity = Int.MAX_VALUE)
 
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.IO + manager.coroutineContext
+        get() = dispatcher + SupervisorJob()
 
     override var volume: Int
         get() = resources.volumeLevel
         set(value) {
-            resources.volumeLevel = 1000.coerceAtMost(0.coerceAtLeast(value))
+            resources.volumeLevel = value.coerceIn(0..1000)
         }
 
     override var isPaused: Boolean
         get() = _paused
         set(value) {
             if (_paused != value) {
+                _paused = value
                 if (value) {
                     dispatchEvent(PlayerPauseEvent(this))
                 } else {
                     dispatchEvent(PlayerResumeEvent(this))
                     lastReceiveTime = System.nanoTime()
                 }
-
-                _paused = value
             }
         }
 
@@ -122,8 +121,8 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         }
 
         dispatchEvent(TrackStartEvent(this, newTrack))
-
         manager.executeTrack(this, newTrack, manager.configuration, resources)
+
         return true
     }
 
@@ -171,7 +170,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         try {
             return provide(targetFrame, 0, TimeUnit.MILLISECONDS)
         } catch (e: Throwable) {
-            ExceptionTools.keepInterrupted(e)
+            e.keepInterrupted()
             throw RuntimeException(e)
         }
     }
@@ -243,6 +242,10 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
         }
     }
 
+    override fun toString(): String {
+        return "DefaultAudioPlayer(volume=$volume, isPaused=$isPaused${if (playingTrack != null) ", playingTrack=$playingTrack" else ""})"
+    }
+
     private fun stopWithReason(reason: AudioTrackEndReason) {
         shadowTrack = null
 
@@ -287,9 +290,7 @@ class DefaultAudioPlayer(private val manager: DefaultAudioPlayerManager) : Audio
 
     private fun dispatchEvent(event: AudioEvent) {
         log.debug { "Firing an event with class ${event::class.qualifiedName}" }
-        runBlocking {
-            eventFlow.emit(event)
-        }
+        eventFlow.tryEmit(event)
     }
 
     private fun handleTerminator(track: InternalAudioTrack) {

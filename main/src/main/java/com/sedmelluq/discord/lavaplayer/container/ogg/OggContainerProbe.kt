@@ -4,12 +4,12 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.extensions.create
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfoBuilder
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -29,7 +29,7 @@ object OggContainerProbe : MediaContainerProbe {
 
         log.debug { "Track ${reference.identifier} is an OGG stream." }
 
-        val infoBuilder = create(reference, inputStream).setIsStream(true)
+        val infoBuilder = AudioTrackInfoBuilder.create(reference, inputStream).setIsStream(true)
         try {
             collectStreamInformation(inputStream, infoBuilder)
         } catch (e: Exception) {

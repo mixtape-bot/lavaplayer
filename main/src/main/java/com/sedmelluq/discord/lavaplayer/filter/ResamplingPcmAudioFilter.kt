@@ -27,18 +27,16 @@ class ResamplingPcmAudioFilter(
             ResamplingQuality.LOW to ResamplingType.LINEAR
         )
 
-        private fun getResamplingType(quality: ResamplingQuality): ResamplingType? {
-            return RESAMPLING_VALUES[quality]
-        }
+        private fun getResamplingType(quality: ResamplingQuality) = RESAMPLING_VALUES[quality]!!
     }
 
     private val progress = SampleRateConverter.Progress()
     private val outputSegments: Array<FloatArray> = Array(channels) { FloatArray(BUFFER_SIZE) }
-    private val converters: Array<SampleRateConverter>
+    private val converters: List<SampleRateConverter>
 
     init {
         val type = getResamplingType(configuration.resamplingQuality)
-        converters = Array(channels) { SampleRateConverter(type, 1, sourceRate, targetRate) }
+        converters = List(channels) { SampleRateConverter(type, 1, sourceRate, targetRate) }
     }
 
     override fun seekPerformed(requestedTime: Long, providedTime: Long) {

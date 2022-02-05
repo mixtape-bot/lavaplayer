@@ -7,12 +7,11 @@ import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream;
 import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sedmelluq.lava.track.info.AudioTrackInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ public class PlsPlaylistContainerProbe implements MediaContainerProbe {
         }
 
         log.debug("Track {} is a PLS playlist file.", reference.getIdentifier());
-        return loadFromLines(DataFormatTools.streamToLines(inputStream, StandardCharsets.UTF_8));
+        return loadFromLines(DataFormatTools.streamToLines(inputStream));
     }
 
     private MediaContainerDetectionResult loadFromLines(List<String> lines) {

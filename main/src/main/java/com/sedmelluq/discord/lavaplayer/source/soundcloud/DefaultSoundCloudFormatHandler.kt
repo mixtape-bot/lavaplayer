@@ -17,26 +17,24 @@ class DefaultSoundCloudFormatHandler : SoundCloudFormatHandler {
 
     override fun buildFormatIdentifier(format: SoundCloudTrackFormat): String {
         val type = TYPES.find { it.matches(format) }
-        return "${"X:".takeIf { type == null } ?: type!!.prefix}${format.lookupUrl}"
+        return "${type?.prefix ?: "X:"}${format.lookupUrl}"
     }
 
     override fun getM3uInfo(identifier: String): SoundCloudM3uInfo? {
-        if (identifier.startsWith(FormatType.TYPE_M3U_OPUS.prefix)) {
-            return SoundCloudM3uInfo(identifier.substring(2), ::SoundCloudOpusSegmentDecoder)
-        } else if (identifier.startsWith(FormatType.TYPE_M3U_MP3.prefix)) {
-            return SoundCloudM3uInfo(identifier.substring(2), ::SoundCloudMp3SegmentDecoder)
+        return when {
+            identifier.startsWith(FormatType.TYPE_M3U_OPUS.prefix) ->
+                SoundCloudM3uInfo(identifier.substring(2), ::SoundCloudOpusSegmentDecoder)
+
+            identifier.startsWith(FormatType.TYPE_M3U_MP3.prefix) ->
+                SoundCloudM3uInfo(identifier.substring(2), ::SoundCloudMp3SegmentDecoder)
+
+            else -> null
         }
 
-        return null
     }
 
-    override fun getMp3LookupUrl(identifier: String): String? {
-        if (identifier.startsWith("M:")) {
-            return identifier.substring(2)
-        }
-
-        return null
-    }
+    override fun getMp3LookupUrl(identifier: String): String? =
+        if (identifier.startsWith("M:")) identifier.removePrefix("M:") else null
 
     enum class FormatType(val protocol: String, val mimeType: String, val prefix: String) {
         TYPE_M3U_OPUS("hls", "audio/ogg", "O:"),

@@ -5,9 +5,9 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.util.EntityUtils
@@ -29,7 +29,7 @@ class BandcampAudioTrack(
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.httpInterface.use { httpInterface ->
             log.debug { "Loading Bandcamp track page from URL: ${info.identifier}" }
 

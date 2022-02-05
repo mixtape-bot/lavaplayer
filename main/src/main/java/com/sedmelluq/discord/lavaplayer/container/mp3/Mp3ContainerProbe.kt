@@ -4,11 +4,12 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
+import com.sedmelluq.discord.lavaplayer.tools.extensions.create
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoBuilder.Companion.create
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfoBuilder
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -37,7 +38,7 @@ object Mp3ContainerProbe : MediaContainerProbe {
         return Mp3TrackProvider(null, inputStream).use { file ->
             file.parseHeaders()
 
-            val trackInfo = create(reference, inputStream) {
+            val trackInfo = AudioTrackInfoBuilder.create(reference, inputStream) {
                 apply(file)
                 isStream = !file.isSeekable
             }

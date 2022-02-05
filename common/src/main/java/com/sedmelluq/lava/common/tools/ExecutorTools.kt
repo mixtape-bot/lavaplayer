@@ -53,7 +53,7 @@ public object ExecutorTools {
         maximumSize: Int,
         timeout: Long,
         queueCapacity: Int,
-        threadFactory: ThreadFactory?
+        threadFactory: ThreadFactory
     ): ThreadPoolExecutor {
         val executor = ThreadPoolExecutor(
             coreSize,
@@ -69,13 +69,9 @@ public object ExecutorTools {
     }
 
     private class EagerlyScalingTaskQueue(capacity: Int) : LinkedBlockingQueue<Runnable>(capacity) {
-        override fun offer(runnable: Runnable): Boolean {
-            return isEmpty() && super.offer(runnable)
-        }
+        override fun offer(runnable: Runnable): Boolean = isEmpty() && super.offer(runnable)
 
-        fun offerDirectly(runnable: Runnable): Boolean {
-            return super.offer(runnable)
-        }
+        fun offerDirectly(runnable: Runnable): Boolean = super.offer(runnable)
     }
 
     private class EagerlyScalingRejectionHandler : RejectedExecutionHandler {
@@ -87,26 +83,14 @@ public object ExecutorTools {
     }
 
     public object CompletedVoidFuture : Future<Void?> {
-        override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
-            return false
-        }
-
-        override fun isCancelled(): Boolean {
-            return false
-        }
-
-        override fun isDone(): Boolean {
-            return true
-        }
+        override fun cancel(mayInterruptIfRunning: Boolean): Boolean = false
+        override fun isCancelled(): Boolean = false
+        override fun isDone(): Boolean = true
 
         @Throws(InterruptedException::class, ExecutionException::class)
-        override fun get(): Void? {
-            return null
-        }
+        override fun get(): Void? = null
 
         @Throws(InterruptedException::class, ExecutionException::class, TimeoutException::class)
-        override fun get(timeout: Long, unit: TimeUnit): Void? {
-            return null
-        }
+        override fun get(timeout: Long, unit: TimeUnit): Void? = null
     }
 }

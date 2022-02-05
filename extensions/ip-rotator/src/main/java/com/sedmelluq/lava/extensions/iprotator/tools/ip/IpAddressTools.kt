@@ -10,10 +10,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import kotlin.jvm.Throws
 
-object IpAddressTools {
+public object IpAddressTools {
     @Throws(HttpException::class)
     @JvmStatic
-    fun getRandomAddressesFromHost(host: HttpHost): Pair<Inet4Address, Inet6Address> {
+    public fun getRandomAddressesFromHost(host: HttpHost): Pair<Inet4Address, Inet6Address> {
         val ipList: List<InetAddress>;
         try {
             ipList = InetAddress.getAllByName(host.hostName)

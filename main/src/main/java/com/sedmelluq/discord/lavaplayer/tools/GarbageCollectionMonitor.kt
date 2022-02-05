@@ -62,6 +62,7 @@ class GarbageCollectionMonitor(private val reportingExecutor: ScheduledExecutorS
         if (GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION == notification.type) {
             val notificationInfo = GarbageCollectionNotificationInfo.from(notification.userData as CompositeData)
             val info = notificationInfo.gcInfo
+
             if (info != null && "No GC" != notificationInfo.gcCause) {
                 registerPause(info.duration)
             }

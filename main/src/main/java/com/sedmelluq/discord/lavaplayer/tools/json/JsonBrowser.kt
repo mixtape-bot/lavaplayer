@@ -1,12 +1,10 @@
 package com.sedmelluq.discord.lavaplayer.tools.json
 
-import kotlinx.serialization.*
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import java.io.IOException
 import java.io.InputStream
-import kotlin.reflect.KClass
 
 @Serializable(with = JsonBrowserSerializer::class)
 class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
@@ -15,9 +13,8 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
         val NULL_BROWSER = JsonBrowser(JsonNull)
 
         @JvmStatic
-        fun create(element: JsonElement): JsonBrowser {
-            return if (element is JsonNull) NULL_BROWSER else JsonBrowser(element)
-        }
+        fun create(element: JsonElement): JsonBrowser =
+            if (element is JsonNull) NULL_BROWSER else JsonBrowser(element)
 
         /**
          * Parse from string.
@@ -25,7 +22,6 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
          * @return JsonBrowser instance for navigating in the result
          * @throws IOException When parsing the JSON failed
          */
-        @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
         fun parse(json: String): JsonBrowser =
             JsonTools.decode(json)
@@ -36,7 +32,6 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
          * @return JsonBrowser instance for navigating in the result
          * @throws IOException When parsing the JSON failed
          */
-        @OptIn(ExperimentalSerializationApi::class)
         @JvmStatic
         fun parse(stream: InputStream): JsonBrowser =
             JsonTools.decode(stream)
@@ -78,15 +73,13 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
     val safeText: String
         get() = text ?: ""
 
-    fun index(index: Int) =
-        get(index)
-
     /**
      * Get an element at an index for a list value
      * @param index List index
      * @return JsonBrowser instance which wraps the value at the specified index
      */
-    operator fun get(index: Int): JsonBrowser = if (element is JsonArray && index >= 0 && index < element.size) {
+    @JvmName("index")
+    operator fun get(index: Int): JsonBrowser = if (element is JsonArray && index in element.indices) {
         create(element[index])
     } else {
         NULL_BROWSER
@@ -114,49 +107,24 @@ class JsonBrowser(@get:JvmName("element") val element: JsonElement) {
         return values.map { JsonBrowser(it) }
     }
 
-    inline fun <reified T> cast(): T {
-        return JsonTools.format.decodeFromJsonElement(element)
-    }
+    inline fun <reified T> cast(): T = JsonTools.format.decodeFromJsonElement(element)
 
-    inline fun <reified T> cast(default: T): T {
-        return safeCast<T>() ?: default
-    }
+    inline fun <reified T> cast(default: T): T = safeCast<T>() ?: default
 
-    inline fun <reified T> safeCast(): T? {
-        return element.runCatching { cast<T>() }.getOrNull()
-    }
+    inline fun <reified T> safeCast(): T? = element.runCatching { cast<T>() }.getOrNull()
 
-    fun format(): String =
-        JsonTools.format.encodeToString(element)
+    fun format(): String = JsonTools.format.encodeToString(element)
 
-    fun asLong(): Long =
-        cast()
+    fun asLong(): Long = cast()
 
-    fun asLong(default: Long): Long =
-        cast(default)
+    fun asLong(default: Long): Long = cast(default)
 
-    fun asBoolean(default: Boolean): Boolean =
-        cast(default)
+    fun asBoolean(default: Boolean): Boolean = cast(default)
 
     override fun equals(other: Any?): Boolean {
-        return element == other
-    }
+        val otherBrowser = other as? JsonBrowser
+            ?: return false
 
-    @OptIn(InternalSerializationApi::class)
-    fun <T : Any> cast(kclass: KClass<T>): T {
-        return JsonTools.format.decodeFromJsonElement(kclass.serializer(), element)
-    }
-}
-
-class JsonBrowserSerializer : KSerializer<JsonBrowser> {
-    override val descriptor = JsonElement.serializer().descriptor
-
-    override fun deserialize(decoder: Decoder): JsonBrowser {
-        val element = (decoder as JsonDecoder).decodeJsonElement()
-        return JsonBrowser(element)
-    }
-
-    override fun serialize(encoder: Encoder, value: JsonBrowser) {
-        (encoder as JsonEncoder).encodeJsonElement(value.element)
+        return element == otherBrowser.element
     }
 }

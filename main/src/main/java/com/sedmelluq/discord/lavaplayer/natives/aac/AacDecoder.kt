@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.natives.aac
 
+import com.sedmelluq.discord.lavaplayer.tools.extensions.reverseBytes
+import com.sedmelluq.discord.lavaplayer.tools.extensions.toRuntimeException
 import com.sedmelluq.discord.lavaplayer.tools.io.BitStreamWriter
 import com.sedmelluq.discord.lavaplayer.tools.io.ByteBufferOutputStream
 import com.sedmelluq.lava.common.natives.NativeResourceHolder
@@ -13,6 +15,60 @@ import java.nio.ShortBuffer
  * layer. The only AAC type verified to work with this is AAC_LC.
  */
 class AacDecoder : NativeResourceHolder() {
+    companion object {
+        private const val TRANSPORT_NONE = 0
+        private const val ERROR_NOT_ENOUGH_BITS = 4098
+        private const val ERROR_OUTPUT_BUFFER_TOO_SMALL = 8204
+        const val AAC_LC = 2
+
+        private val NO_BUFFER = ByteBuffer
+            .allocateDirect(0)
+            .asShortBuffer()
+
+        private fun encodeConfiguration(objectType: Int, frequency: Int, channels: Int): Long {
+            return try {
+                val buffer = ByteBuffer.allocate(8)
+                buffer.order(ByteOrder.nativeOrder())
+
+                val bitWriter = BitStreamWriter(ByteBufferOutputStream(buffer))
+                bitWriter.write(objectType.toLong(), 5)
+
+                val frequencyIndex = getFrequencyIndex(frequency)
+                bitWriter.write(frequencyIndex.toLong(), 4)
+
+                if (frequencyIndex == 15) {
+                    bitWriter.write(frequency.toLong(), 24)
+                }
+
+                bitWriter.write(channels.toLong(), 4)
+                bitWriter.flush()
+                buffer.clear()
+                buffer.long
+            } catch (e: IOException) {
+                throw e.toRuntimeException()
+            }
+        }
+
+        private fun getFrequencyIndex(frequency: Int): Int {
+            return when (frequency) {
+                96000 -> 0
+                88200 -> 1
+                64000 -> 2
+                48000 -> 3
+                44100 -> 4
+                32000 -> 5
+                24000 -> 6
+                22050 -> 7
+                16000 -> 8
+                12000 -> 9
+                11025 -> 10
+                8000 -> 11
+                7350 -> 12
+                else -> 15
+            }
+        }
+    }
+
     private val library: AacDecoderLibrary = AacDecoderLibrary.instance
     private val instance: Long = library.create(TRANSPORT_NONE)
 
@@ -24,9 +80,9 @@ class AacDecoder : NativeResourceHolder() {
      * @param channels   Number of channels.
      * @throws IllegalStateException If the decoder has already been closed.
      */
-    fun configure(objectType: Int, frequency: Int, channels: Int) {
+    fun configure(objectType: Int, frequency: Int, channels: Int): Int {
         val buffer = encodeConfiguration(objectType, frequency, channels)
-        configureRaw(buffer)
+        return configureRaw(buffer)
     }
 
     /**
@@ -35,7 +91,7 @@ class AacDecoder : NativeResourceHolder() {
      * @param config Raw ASC format configuration
      * @throws IllegalStateException If the decoder has already been closed.
      */
-    fun configure(config: ByteArray) {
+    fun configure(config: ByteArray): Int {
         require(config.size <= 8) {
             "Cannot process a header larger than size 8"
         }
@@ -44,22 +100,20 @@ class AacDecoder : NativeResourceHolder() {
             buf or (byte.toLong() shl (i shl 3))
         }
 
-        configureRaw(buf)
+        return configureRaw(buf)
     }
 
     @Synchronized
-    private fun configureRaw(buffer: Long) {
+    private fun configureRaw(buffer: Long): Int {
         checkNotReleased()
 
-        var buffer = buffer
-        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-            buffer = java.lang.Long.reverseBytes(buffer)
-        }
-
-        var error: Int
-        check(library.configure(instance, buffer).also { error = it } == 0) {
+        val buf = if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) buffer.reverseBytes() else buffer
+        val error = library.configure(instance, buf)
+        check(error == 0) {
             "Configuring failed with error $error"
         }
+
+        return error
     }
 
     /**
@@ -102,32 +156,42 @@ class AacDecoder : NativeResourceHolder() {
     @Synchronized
     fun decode(buffer: ShortBuffer, flush: Boolean): Boolean {
         checkNotReleased()
-        require(buffer.isDirect) { "Buffer argument must be a direct buffer." }
+        require(buffer.isDirect) {
+            "Buffer argument must be a direct buffer."
+        }
+
 
         val result = library.decode(instance, buffer, buffer.capacity(), flush)
-        check(result == 0 || result == ERROR_NOT_ENOUGH_BITS) { "Error from decoder $result" }
+        check(result == 0 || result == ERROR_NOT_ENOUGH_BITS) {
+            "Error from decoder $result"
+        }
 
         return result == 0
     }
 
     /**
      * @return Correct stream info. The values passed to configure method do not account for SBR and PS and detecting
-     * these is a part of the decoding process. If there was not enough input for decoding a full frame, null is
+     * these are a part of the decoding process. If there was not enough input for decoding a full frame, null is
      * returned.
+     *
      * @throws IllegalStateException If the decoder result produced an unexpected error.
      */
     @Synchronized
     fun resolveStreamInfo(): StreamInfo? {
         checkNotReleased()
-        val result = library.decode(instance, NO_BUFFER, 0, false)
-        if (result == ERROR_NOT_ENOUGH_BITS) {
-            return null
-        } else {
-            check(result == ERROR_OUTPUT_BUFFER_TOO_SMALL) { "Expected decoding to halt, got: $result" }
+        val result = library
+            .decode(instance, NO_BUFFER, 0, false)
+            .takeUnless { it == ERROR_NOT_ENOUGH_BITS }
+            ?: return null
+
+        check(result == ERROR_OUTPUT_BUFFER_TOO_SMALL) {
+            "Expected decoding to halt, got: $result"
         }
 
         val combinedValue = library.getStreamInfo(instance)
-        check(combinedValue != 0L) { "Native library failed to detect stream info." }
+        check(combinedValue != 0L) {
+            "Native library failed to detect stream info."
+        }
 
         return StreamInfo(
             sampleRate = (combinedValue ushr 32).toInt(),
@@ -164,56 +228,4 @@ class AacDecoder : NativeResourceHolder() {
         @JvmField
         val frameSize: Int
     )
-
-    companion object {
-        private const val TRANSPORT_NONE = 0
-        private const val ERROR_NOT_ENOUGH_BITS = 4098
-        private const val ERROR_OUTPUT_BUFFER_TOO_SMALL = 8204
-        const val AAC_LC = 2
-
-        private val NO_BUFFER = ByteBuffer.allocateDirect(0).asShortBuffer()
-
-        private fun encodeConfiguration(objectType: Int, frequency: Int, channels: Int): Long {
-            return try {
-                val buffer = ByteBuffer.allocate(8)
-                buffer.order(ByteOrder.nativeOrder())
-
-                val bitWriter = BitStreamWriter(ByteBufferOutputStream(buffer))
-                bitWriter.write(objectType.toLong(), 5)
-
-                val frequencyIndex = getFrequencyIndex(frequency)
-                bitWriter.write(frequencyIndex.toLong(), 4)
-
-                if (frequencyIndex == 15) {
-                    bitWriter.write(frequency.toLong(), 24)
-                }
-
-                bitWriter.write(channels.toLong(), 4)
-                bitWriter.flush()
-                buffer.clear()
-                buffer.long
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
-        }
-
-        private fun getFrequencyIndex(frequency: Int): Int {
-            return when (frequency) {
-                96000 -> 0
-                88200 -> 1
-                64000 -> 2
-                48000 -> 3
-                44100 -> 4
-                32000 -> 5
-                24000 -> 6
-                22050 -> 7
-                16000 -> 8
-                12000 -> 9
-                11025 -> 10
-                8000 -> 11
-                7350 -> 12
-                else -> 15
-            }
-        }
-    }
 }

@@ -6,10 +6,8 @@ import com.sedmelluq.discord.lavaplayer.container.ogg.OggTrackLoader
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext
 import java.io.IOException
-import java.util.function.Supplier
 
-class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: Supplier<SeekableInputStream>) :
-    SoundCloudSegmentDecoder {
+class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: () -> SeekableInputStream) : SoundCloudSegmentDecoder {
     private var lastJoinedStream: OggPacketInputStream? = null
     private var blueprint: OggTrackBlueprint? = null
 
@@ -19,10 +17,7 @@ class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: Supplier<Seek
         if (beginning) {
             val newBlueprint = OggTrackLoader.loadTrackBlueprint(stream)
             if (blueprint == null) {
-                if (newBlueprint == null) {
-                    throw IOException("No OGG track detected in the stream.")
-                }
-                blueprint = newBlueprint
+                blueprint = newBlueprint ?: throw IOException("No OGG track detected in the stream.")
             }
         } else {
             stream.startNewTrack()
@@ -40,11 +35,7 @@ class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: Supplier<Seek
     @Throws(InterruptedException::class, IOException::class)
     override fun playStream(context: AudioProcessingContext, startPosition: Long, desiredPosition: Long) {
         blueprint!!.loadTrackHandler(obtainStream()).use { handler ->
-            handler.initialise(
-                context,
-                startPosition,
-                desiredPosition
-            )
+            handler.initialise(context, startPosition, desiredPosition)
             handler.provideFrames()
         }
     }
@@ -56,7 +47,7 @@ class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: Supplier<Seek
 
     private fun obtainStream(): OggPacketInputStream {
         if (lastJoinedStream == null) {
-            lastJoinedStream = OggPacketInputStream(nextStreamProvider.get(), true)
+            lastJoinedStream = OggPacketInputStream(nextStreamProvider(), true)
         }
 
         return lastJoinedStream as OggPacketInputStream

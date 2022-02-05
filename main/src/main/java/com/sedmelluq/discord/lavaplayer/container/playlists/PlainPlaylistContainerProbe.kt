@@ -4,10 +4,10 @@ import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerProbe
-import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools.streamToLines
+import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import java.io.IOException
 
@@ -27,7 +27,7 @@ object PlainPlaylistContainerProbe : MediaContainerProbe {
         }
 
         log.debug { "Track ${reference.identifier} is a plain playlist file." }
-        return loadFromLines(streamToLines(inputStream, Charsets.UTF_8))
+        return loadFromLines(DataFormatTools.streamToLines(inputStream))
     }
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false

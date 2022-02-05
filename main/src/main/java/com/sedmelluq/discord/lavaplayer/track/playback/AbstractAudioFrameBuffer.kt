@@ -57,17 +57,12 @@ abstract class AbstractAudioFrameBuffer protected constructor(protected val form
         }
     }
 
-    override fun hasClearOnInsert(): Boolean {
-        return clearOnInsert
-    }
-
     override fun lockBuffer() {
         locked = true
     }
 
-    override fun hasReceivedFrames(): Boolean {
-        return receivedFrames
-    }
+    override fun hasClearOnInsert(): Boolean = clearOnInsert
+    override fun hasReceivedFrames(): Boolean = receivedFrames
 
     protected abstract fun signalWaiters()
 }

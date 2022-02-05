@@ -18,7 +18,7 @@ public class TrackBoxBuilder {
 
     private static String buildFirstLine(int width, AudioTrack track) {
         StringBuilder builder = new StringBuilder();
-        String title = track.getInfo().title;
+        String title = track.getInfo().getTitle();
         int titleWidth = width - 7;
 
         if (title.length() > titleWidth) {

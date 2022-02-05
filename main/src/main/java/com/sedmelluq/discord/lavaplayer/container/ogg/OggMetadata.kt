@@ -1,8 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.container.ogg
 
-import com.sedmelluq.discord.lavaplayer.track.info.AudioTrackInfoProvider
-import com.sedmelluq.discord.lavaplayer.container.ogg.OggMetadata
 import com.sedmelluq.discord.lavaplayer.tools.Units
+import com.sedmelluq.lava.track.info.AudioTrackInfoProvider
 
 /**
  * Audio track info provider based on OGG metadata map.

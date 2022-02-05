@@ -13,5 +13,5 @@ fun interface AudioFrameBufferFactory {
      * @param stopping       Atomic boolean which has true value when the track is in a state of pending stop.
      * @return A new frame buffer instance.
      */
-    fun create(bufferDuration: Int, format: AudioDataFormat, stopping: (() -> Boolean)?): AudioFrameBuffer
+    fun create(bufferDuration: Int, format: AudioDataFormat, stopping: () -> Boolean): AudioFrameBuffer
 }

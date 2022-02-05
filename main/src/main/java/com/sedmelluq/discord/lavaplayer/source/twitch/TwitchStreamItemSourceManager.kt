@@ -1,17 +1,18 @@
 package com.sedmelluq.discord.lavaplayer.source.twitch
 
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.tools.Units
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
+import com.sedmelluq.discord.lavaplayer.tools.extensions.closeWithWarnings
 import com.sedmelluq.discord.lavaplayer.tools.io.*
 import com.sedmelluq.discord.lavaplayer.tools.json.JsonBrowser
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpUriRequest
 import java.io.DataInput
@@ -28,8 +29,9 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
     private val clientId: String = DEFAULT_CLIENT_ID
 ) : ItemSourceManager, HttpConfigurable {
     companion object {
-        const val DEFAULT_CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6"
+        private const val DEFAULT_CLIENT_ID = "jzkbprff40iqj646a697cyrvl0zt2m6"
         private const val STREAM_NAME_REGEX = "^https://(?:www\\.|go\\.)?twitch.tv/([^/]+)$"
+
         private val streamNameRegex = Pattern.compile(STREAM_NAME_REGEX)
 
         /**
@@ -69,17 +71,27 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
      * @param url Request URL
      * @return Request with necessary headers attached.
      */
-    fun createGetRequest(url: String?): HttpUriRequest {
-        return addClientHeaders(HttpGet(url), clientId)
-    }
+    fun createGetRequest(url: String?): HttpUriRequest = addClientHeaders(HttpGet(url), clientId)
 
     /**
      * @param url Request URL
      * @return Request with necessary headers attached.
      */
-    fun createGetRequest(url: URI?): HttpUriRequest {
-        return addClientHeaders(HttpGet(url), clientId)
-    }
+    fun createGetRequest(url: URI?): HttpUriRequest = addClientHeaders(HttpGet(url), clientId)
+
+    override fun isTrackEncodable(track: AudioTrack): Boolean = true
+
+    override fun shutdown() = httpInterfaceManager.closeWithWarnings()
+
+    @Throws(IOException::class)
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack =
+        TwitchStreamAudioTrack(trackInfo, this)
+
+    override fun configureRequests(configurator: RequestConfigurator) =
+        httpInterfaceManager.configureRequests(configurator)
+
+    override fun configureBuilder(configurator: BuilderConfigurator) =
+        httpInterfaceManager.configureBuilder(configurator)
 
     override suspend fun loadItem(state: LoaderState, reference: AudioReference): AudioItem? {
         val streamName = getChannelIdentifierFromUrl(reference.identifier)
@@ -92,7 +104,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
 
         val channelId: String
         try {
-            val token: JsonBrowser = accessToken["token"].text!!.decodeJson()
+            val token = JsonBrowser.parse(accessToken["token"].text!!)
             channelId = token["channel_id"].safeText
         } catch (e: IOException) {
             return null
@@ -119,8 +131,9 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
             val channelData = channelInfo["stream"]["channel"]
             val status = channelData["status"].text
             val thumbnail = channelData["logo"].text
+
             TwitchStreamAudioTrack(
-                AudioTrackInfo(
+                BasicAudioTrackInfo(
                     status!!,
                     streamName,
                     Units.DURATION_MS_UNKNOWN,
@@ -133,27 +146,6 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
         }
     }
 
-    override fun isTrackEncodable(track: AudioTrack): Boolean {
-        return true
-    }
-
-    @Throws(IOException::class)
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack {
-        return TwitchStreamAudioTrack(trackInfo, this)
-    }
-
-    override fun shutdown() {
-        ExceptionTools.closeWithWarnings(httpInterfaceManager)
-    }
-
-    override fun configureRequests(configurator: RequestConfigurator) {
-        httpInterfaceManager.configureRequests(configurator)
-    }
-
-    override fun configureBuilder(configurator: BuilderConfigurator) {
-        httpInterfaceManager.configureBuilder(configurator)
-    }
-
     private fun fetchAccessToken(name: String): JsonBrowser? {
         try {
             httpInterface.use { httpInterface ->
@@ -162,15 +154,11 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
                 return HttpClientTools.fetchResponseAsJson(httpInterface, request)
             }
         } catch (e: IOException) {
-            throw FriendlyException(
-                "Loading Twitch channel access token failed.",
-                FriendlyException.Severity.SUSPICIOUS,
-                e
-            )
+            friendlyError("Loading Twitch channel access token failed.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 
-    private fun fetchStreamChannelInfo(channelId: String?): JsonBrowser? {
+    private fun fetchStreamChannelInfo(channelId: String): JsonBrowser? {
         try {
             httpInterface.use { httpInterface ->
                 // helix/streams?user_login=name
@@ -178,7 +166,7 @@ class TwitchStreamItemSourceManager @JvmOverloads constructor(
                 return HttpClientTools.fetchResponseAsJson(httpInterface, request)
             }
         } catch (e: IOException) {
-            throw FriendlyException("Loading Twitch channel information failed.", FriendlyException.Severity.SUSPICIOUS, e)
+            friendlyError("Loading Twitch channel information failed.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 }

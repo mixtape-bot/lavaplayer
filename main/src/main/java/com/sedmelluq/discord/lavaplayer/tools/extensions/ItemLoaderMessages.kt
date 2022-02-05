@@ -1,8 +1,8 @@
 package com.sedmelluq.discord.lavaplayer.tools.extensions
 
-import kotlinx.coroutines.Job
 import com.sedmelluq.discord.lavaplayer.track.loader.message.ItemLoaderMessage
 import com.sedmelluq.discord.lavaplayer.track.loader.message.ItemLoaderMessages
+import kotlinx.coroutines.Job
 
 /**
  *

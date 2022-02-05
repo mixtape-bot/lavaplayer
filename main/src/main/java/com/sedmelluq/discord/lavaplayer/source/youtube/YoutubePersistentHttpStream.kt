@@ -1,9 +1,9 @@
 package com.sedmelluq.discord.lavaplayer.source.youtube
 
+import com.sedmelluq.discord.lavaplayer.tools.extensions.toRuntimeException
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream
 import org.apache.http.client.utils.URIBuilder
-
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -20,20 +20,20 @@ class YoutubePersistentHttpStream(
     contentUrl: URI,
     contentLength: Long
 ) : PersistentHttpStream(httpInterface, contentUrl, contentLength) {
+    override val connectUrl: URI?
+        get() {
+            if (position < 0) {
+                return contentUrl
+            }
 
-    override fun getConnectUrl(): URI? {
-        if (position < 0) {
-            return contentUrl
+            try {
+                return URIBuilder(contentUrl)
+                    .addParameter("range", "$position-$contentLength")
+                    .build()
+            } catch (e: URISyntaxException) {
+                throw e.toRuntimeException()
+            }
         }
-
-        try {
-            return URIBuilder(contentUrl)
-                .addParameter("range", "$position-$contentLength")
-                .build()
-        } catch (e: URISyntaxException) {
-            throw RuntimeException(e)
-        }
-    }
 
     override fun useHeadersForRange() =
         false

@@ -1,13 +1,20 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud
 
 import com.sedmelluq.discord.lavaplayer.source.ItemSourceManager
+import com.sedmelluq.discord.lavaplayer.source.common.AudioTrackCollectionLoader
 import com.sedmelluq.discord.lavaplayer.source.common.LinkRouter
-import com.sedmelluq.discord.lavaplayer.source.common.TrackCollectionLoader
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.tools.extensions.decodeJson
+import com.sedmelluq.discord.lavaplayer.tools.extensions.toRuntimeException
 import com.sedmelluq.discord.lavaplayer.tools.io.*
-import com.sedmelluq.discord.lavaplayer.track.*
+import com.sedmelluq.discord.lavaplayer.tools.json.JsonTools
+import com.sedmelluq.discord.lavaplayer.track.AudioItem
+import com.sedmelluq.discord.lavaplayer.track.AudioReference
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
+import com.sedmelluq.discord.lavaplayer.track.collection.Playlist
+import com.sedmelluq.discord.lavaplayer.track.collection.SearchResult
 import com.sedmelluq.discord.lavaplayer.track.loader.LoaderState
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.friendlyError
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import org.apache.http.HttpResponse
 import org.apache.http.HttpStatus
 import org.apache.http.client.methods.HttpGet
@@ -28,7 +35,7 @@ class SoundCloudItemSourceManager(
     private val allowSearch: Boolean,
     private val htmlDataLoader: SoundCloudHtmlDataLoader,
     val formatHandler: SoundCloudFormatHandler,
-    private val playlistLoader: TrackCollectionLoader,
+    private val playlistLoader: AudioTrackCollectionLoader,
     private val linkRouter: LinkRouter<SoundCloudLinkRoutes> = SoundCloudLinkRouter()
 ) : ItemSourceManager, HttpConfigurable {
     companion object {
@@ -45,7 +52,9 @@ class SoundCloudItemSourceManager(
             val htmlDataLoader: SoundCloudHtmlDataLoader = DefaultSoundCloudHtmlDataLoader()
             val formatHandler: SoundCloudFormatHandler = DefaultSoundCloudFormatHandler()
             return SoundCloudItemSourceManager(
-                true, htmlDataLoader, formatHandler,
+                true,
+                htmlDataLoader,
+                formatHandler,
                 DefaultSoundCloudPlaylistLoader(htmlDataLoader, formatHandler)
             )
         }
@@ -59,8 +68,8 @@ class SoundCloudItemSourceManager(
     private val clientIdTracker = SoundCloudClientIdTracker(httpInterfaceManager)
     private val loadingRoutes = LoadingRoutes()
 
-    val clientId: String
-        get() = clientIdTracker.clientId
+    val clientId: String?
+        get() = clientIdTracker.ensureClientId()
 
     /**
      * @return Get an HTTP interface for a playing track.
@@ -82,7 +91,7 @@ class SoundCloudItemSourceManager(
     override fun isTrackEncodable(track: AudioTrack): Boolean =
         true
 
-    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput): AudioTrack =
+    override fun decodeTrack(trackInfo: AudioTrackInfo, input: DataInput, version: Int): AudioTrack =
         SoundCloudAudioTrack(trackInfo, this)
 
     override fun configureRequests(configurator: RequestConfigurator) {
@@ -124,7 +133,7 @@ class SoundCloudItemSourceManager(
         val uri = URI.create("https://api-v2.soundcloud.com/users/${userInfo.id}/likes?limit=200&offset=0")
         httpInterface.execute(HttpGet(uri)).use { response ->
             HttpClientTools.assertSuccessWithContent(response, "liked tracks response")
-            return response.entity.content.decodeJson()
+            return JsonTools.decode(response.entity.content)
         }
     }
 
@@ -133,18 +142,13 @@ class SoundCloudItemSourceManager(
             .filterNot { it.track.isBlocked }
             .map { loadFromTrackData(it.track) }
 
-        return BasicAudioTrackCollection(
-            "Liked by " + userInfo.name,
-            AudioTrackCollectionType.Playlist,
-            tracks.toMutableList(),
-            null
-        )
+        return Playlist("Liked by " + userInfo.name, tracks.toMutableList())
     }
 
     @Throws(IOException::class)
     private fun loadSearchResultsFromResponse(response: HttpResponse, query: String): AudioItem {
         return try {
-            val searchResults = response.entity.content.decodeJson<SoundCloudSearchResultModel>()
+            val searchResults = JsonTools.decode<SoundCloudSearchResultModel>(response.entity.content)
             extractTracksFromSearchResults(query, searchResults)
         } finally {
             EntityUtils.consumeQuietly(response.entity)
@@ -159,7 +163,7 @@ class SoundCloudItemSourceManager(
                 .addParameter("limit", limit.toString())
                 .build()
         } catch (e: URISyntaxException) {
-            throw RuntimeException(e)
+            throw e.toRuntimeException()
         }
     }
 
@@ -169,12 +173,7 @@ class SoundCloudItemSourceManager(
             .map { loadFromTrackData(it) }
             .toMutableList()
 
-        return BasicAudioTrackCollection(
-            "Search results for: $query",
-            AudioTrackCollectionType.SearchResult(query),
-            tracks,
-            null
-        )
+        return SearchResult(query, tracks)
     }
 
     internal fun loadFromTrackPage(trackWebUrl: String?): AudioTrack? {
@@ -184,12 +183,12 @@ class SoundCloudItemSourceManager(
                     ?: return null
 
                 val trackData = rootData.resources.firstNotNullOfOrNull { it.data as? SoundCloudTrackModel }
-                    ?: throw FriendlyException("This track is not available", FriendlyException.Severity.COMMON, null)
+                    ?: friendlyError("This track is not available")
 
                 return loadFromTrackData(trackData)
             }
         } catch (e: IOException) {
-            throw FriendlyException("Loading track from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
+            friendlyError("Loading track from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
         }
     }
 
@@ -210,12 +209,13 @@ class SoundCloudItemSourceManager(
                     return extractTracksFromLikedList(loadLikedListForUserId(httpInterface, userInfo), userInfo)
                 }
             } catch (e: IOException) {
-                throw FriendlyException("Loading liked tracks from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
+                friendlyError("Loading liked tracks from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
             }
         }
 
         override fun set(url: String): AudioItem? {
             val nonMobileUrl = SoundCloudHelper.nonMobileUrl(url)
+
             return playlistLoader.load(nonMobileUrl, httpInterfaceManager) { buildTrackFromInfo(it) }
         }
 
@@ -228,7 +228,7 @@ class SoundCloudItemSourceManager(
                         .use { return loadSearchResultsFromResponse(it, query) }
                 }
             } catch (e: IOException) {
-                throw FriendlyException("Loading search results from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
+                friendlyError("Loading search results from SoundCloud failed.", FriendlyException.Severity.SUSPICIOUS, e)
             }
         }
 
@@ -241,7 +241,7 @@ class SoundCloudItemSourceManager(
 
         var formatHandler: SoundCloudFormatHandler? = null
 
-        var playlistLoader: TrackCollectionLoader? = null
+        var playlistLoader: AudioTrackCollectionLoader? = null
 
         var playlistLoaderFactory: PlaylistLoaderFactory? = null
 
@@ -268,7 +268,7 @@ class SoundCloudItemSourceManager(
             fun create(
                 htmlDataLoader: SoundCloudHtmlDataLoader,
                 formatHandler: SoundCloudFormatHandler
-            ): TrackCollectionLoader
+            ): AudioTrackCollectionLoader
         }
     }
 }

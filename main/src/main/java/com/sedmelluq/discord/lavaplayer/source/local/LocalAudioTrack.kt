@@ -2,10 +2,10 @@ package com.sedmelluq.discord.lavaplayer.source.local
 
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.InternalAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import java.io.File
 
 /**
@@ -26,14 +26,10 @@ class LocalAudioTrack(
     private val file = File(trackInfo.identifier)
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         LocalSeekableInputStream(file).use { inputStream ->
-            processDelegate(
-                (containerTrackFactory.createTrack(
-                    info,
-                    inputStream
-                ) as InternalAudioTrack), executor
-            )
+            val track = (containerTrackFactory.createTrack(info, inputStream) as InternalAudioTrack)
+            processDelegate(track, executor)
         }
     }
 

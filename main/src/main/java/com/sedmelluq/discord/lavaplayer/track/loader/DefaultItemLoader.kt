@@ -1,17 +1,23 @@
 package com.sedmelluq.discord.lavaplayer.track.loader
 
-import kotlinx.coroutines.async
 import com.sedmelluq.discord.lavaplayer.source.ProbingItemSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
+import com.sedmelluq.discord.lavaplayer.tools.extensions.friendlyError
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 import com.sedmelluq.discord.lavaplayer.track.AudioReference
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackCollection
+import com.sedmelluq.discord.lavaplayer.track.collection.AudioTrackCollection
 import com.sedmelluq.discord.lavaplayer.track.loader.message.DefaultItemLoaderMessages
+import com.sedmelluq.lava.common.tools.exception.FriendlyException
+import com.sedmelluq.lava.common.tools.exception.wrapUnfriendlyException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.invoke
 import mu.KotlinLogging
 
-open class DefaultItemLoader(reference: AudioReference, private val factory: DefaultItemLoaderFactory) : ItemLoader {
+open class DefaultItemLoader(
+    reference: AudioReference,
+    private val factory: DefaultItemLoaderFactory,
+    override var resultHandler: ItemLoadResultHandler? = null,
+) : ItemLoader {
     companion object {
         private const val MAXIMUM_LOAD_REDIRECTS = 5
         private val log = KotlinLogging.logger { }
@@ -19,33 +25,26 @@ open class DefaultItemLoader(reference: AudioReference, private val factory: Def
 
     override val state = LoaderState(reference, DefaultItemLoaderMessages())
 
-    override var resultHandler: ItemLoadResultHandler? = null
-
-    override suspend fun load(): ItemLoadResult {
-        return try {
-            val result = loadReference()
-            if (result is ItemLoadResult.NoMatches) {
-                log.debug { "No matches found for identifier '${state.reference.identifier}'" }
-            }
-
-            resultHandler?.handle(result)
-            result
+    override suspend fun load(): ItemLoadResult = factory.dispatcher {
+        val result = try {
+            loadReference()
         } catch (t: Throwable) {
-            val exception = ExceptionTools.wrapUnfriendlyException(
-                "Something went wrong when looking up the track",
-                FriendlyException.Severity.FAULT,
-                t
-            )
-            ExceptionTools.log(log, exception, "loading item '${state.reference.identifier}'")
+            val exception = t.wrapUnfriendlyException("Something went wrong when looking up the track", FriendlyException.Severity.SUSPICIOUS)
+            log.friendlyError(exception) { "loading item '${state.reference.identifier}'" }
+
             ItemLoadResult.LoadFailed(exception)
-        } finally {
-            state.messages.shutdown()
         }
+
+        state.messages.shutdown()
+        if (result is ItemLoadResult.NoMatches) {
+            log.debug { "No matches found for identifier '${state.reference.identifier}'" }
+        }
+
+        resultHandler?.handle(result)
+        result
     }
 
-    override fun loadAsync() = factory.async {
-        load()
-    }
+    override fun loadAsync() = factory.async { load() }
 
     private suspend fun loadReference(): ItemLoadResult {
         var currentReference = state.reference

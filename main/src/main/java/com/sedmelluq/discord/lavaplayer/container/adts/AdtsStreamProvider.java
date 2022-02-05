@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.DirectBufferStreamBroker;
 import com.sedmelluq.discord.lavaplayer.tools.io.ResettableBoundedInputStream;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -17,7 +18,7 @@ import java.nio.ShortBuffer;
 /**
  * Provides the frames of an ADTS stream track to the frame consumer.
  */
-public class AdtsStreamProvider {
+public class AdtsStreamProvider implements Closeable {
     private final AudioProcessingContext context;
     private final AdtsStreamReader streamReader;
     private final AacDecoder decoder;
@@ -132,6 +133,7 @@ public class AdtsStreamProvider {
     /**
      * Free all resources.
      */
+    @Override
     public void close() {
         try {
             if (downstream != null) {

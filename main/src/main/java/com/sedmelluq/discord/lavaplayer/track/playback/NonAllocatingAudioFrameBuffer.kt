@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException
 class NonAllocatingAudioFrameBuffer(
     bufferDuration: Int,
     format: AudioDataFormat,
-    private val stopping: (() -> Boolean)?
+    private val stopping: () -> Boolean
 ) : AbstractAudioFrameBuffer(format) {
     companion object {
         private val log = KotlinLogging.logger { }
@@ -83,7 +83,7 @@ class NonAllocatingAudioFrameBuffer(
         // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
         // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
         // offer with timeout, check stopping if timed out, then put?
-        if (stopping?.invoke() == true) {
+        if (stopping()) {
             throw InterruptedException()
         }
 
@@ -245,6 +245,7 @@ class NonAllocatingAudioFrameBuffer(
         targetFrame.volume = frame.volume
         targetFrame.setDataReference(frameBuffer, frameOffset, frameLength)
         frame.getData(frameBuffer, frameOffset)
+
         frameCount++
     }
 

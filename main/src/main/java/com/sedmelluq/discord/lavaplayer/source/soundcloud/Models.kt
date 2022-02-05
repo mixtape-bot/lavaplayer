@@ -1,5 +1,7 @@
 package com.sedmelluq.discord.lavaplayer.source.soundcloud
 
+import com.sedmelluq.lava.track.info.AudioTrackInfo
+import com.sedmelluq.lava.track.info.BasicAudioTrackInfo
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -7,7 +9,6 @@ import kotlinx.serialization.descriptors.buildSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 
 @Serializable(with = SoundCloudResource.Companion::class)
 sealed class SoundCloudResource {
@@ -118,7 +119,7 @@ data class SoundCloudTrackModel(
     val isBlocked: Boolean
         get() = policy == SoundCloudTrackPolicy.Block
 
-    fun getTrackInfo(identifier: String) = AudioTrackInfo(
+    fun getTrackInfo(identifier: String): AudioTrackInfo = BasicAudioTrackInfo(
         title = title,
         author = user?.username ?: "Unknown Artist",
         length = duration,

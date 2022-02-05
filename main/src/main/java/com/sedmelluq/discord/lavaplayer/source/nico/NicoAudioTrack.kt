@@ -6,16 +6,15 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpClientTools
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.PersistentHttpStream
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
 import com.sedmelluq.discord.lavaplayer.track.DelegatedAudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.LocalAudioTrackExecutor
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 import mu.KotlinLogging
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.util.EntityUtils
 import java.io.IOException
 import java.net.URI
-import java.nio.charset.StandardCharsets
 
 /**
  * Audio track that handles processing NicoNico tracks.
@@ -32,7 +31,7 @@ class NicoAudioTrack(
     }
 
     @Throws(Exception::class)
-    override fun process(executor: LocalAudioTrackExecutor) {
+    override suspend fun process(executor: LocalAudioTrackExecutor) {
         sourceManager.checkLoggedIn()
         sourceManager.httpInterface.use { httpInterface ->
             loadVideoMainPage(httpInterface)
@@ -69,7 +68,8 @@ class NicoAudioTrack(
             }
 
             val text = EntityUtils.toString(response.entity)
-            val format = DataFormatTools.convertToMapLayout(URLEncodedUtils.parse(text, StandardCharsets.UTF_8))
+            val format = DataFormatTools.convertToMapLayout(URLEncodedUtils.parse(text, Charsets.UTF_8))
+
             return format["url"]!!
         }
     }

@@ -293,7 +293,6 @@ public class MatroskaStreamingFile {
                 }
 
                 reader.skip(child);
-
                 if (segmentElement.getRemaining(reader.getPosition()) <= 0) {
                     break;
                 }
@@ -336,7 +335,6 @@ public class MatroskaStreamingFile {
         throws InterruptedException, IOException {
 
         MatroskaElement child;
-
         while ((child = reader.readNextElement(blockGroup)) != null) {
             if (child.is(MatroskaElementType.Block)) {
                 MatroskaBlock block = reader.readBlockHeader(child, consumer.getTrack().index);

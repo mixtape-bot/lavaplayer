@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.source.common.ExtractorContext
 import com.sedmelluq.discord.lavaplayer.source.common.LinkRouter
 import com.sedmelluq.discord.lavaplayer.track.AudioItem
 
-class SoundCloudLinkRouter : LinkRouter.UsingExtractors<SoundCloudLinkRoutes> {
+class SoundCloudLinkRouter : LinkRouter.Extracted<SoundCloudLinkRoutes> {
     companion object {
         private const val PROTOCOL_REGEX = """(?:https?://)?"""
         private const val SUBDOMAIN_REGEX = """(?:www\.|m\.)?"""

@@ -4,33 +4,21 @@ import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3TrackProvider
 import com.sedmelluq.discord.lavaplayer.tools.io.SeekableInputStream
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioProcessingContext
 import java.io.IOException
-import java.util.function.Supplier
 
-class SoundCloudMp3SegmentDecoder(
-    private val nextStreamProvider: Supplier<SeekableInputStream>
-) : SoundCloudSegmentDecoder {
-    override fun prepareStream(beginning: Boolean) {
-        // Nothing to do.
-    }
+class SoundCloudMp3SegmentDecoder(private val nextStreamProvider: () -> SeekableInputStream) : SoundCloudSegmentDecoder {
+    override fun prepareStream(beginning: Boolean) = Unit         // Nothing to do.
 
-    override fun resetStream() {
-        // Nothing to do.
-    }
+    override fun resetStream() = Unit // Nothing to do.
+
+    override fun close() = Unit // Nothing to do.
 
     @Throws(InterruptedException::class, IOException::class)
     override fun playStream(context: AudioProcessingContext, startPosition: Long, desiredPosition: Long) {
-        nextStreamProvider.get().use { stream ->
-            val trackProvider = Mp3TrackProvider(context, stream)
-            try {
+        nextStreamProvider().use { stream ->
+            Mp3TrackProvider(context, stream).use { trackProvider ->
                 trackProvider.parseHeaders()
                 trackProvider.provideFrames()
-            } finally {
-                trackProvider.close()
             }
         }
-    }
-
-    override fun close() {
-        // Nothing to do.
     }
 }

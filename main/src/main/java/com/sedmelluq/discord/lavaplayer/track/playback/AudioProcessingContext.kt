@@ -9,7 +9,7 @@ import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerResources
  *
  * @param configuration Audio encoding or filtering related configuration
  * @param frameBuffer   Frame buffer for the produced audio frames
- * @param playerOptions State of the audio player.
+ * @param resources     The audio player's resources.
  * @param outputFormat  Output format to use throughout this processing cycle
  */
 data class AudioProcessingContext(
@@ -27,7 +27,7 @@ data class AudioProcessingContext(
      * Mutable volume level for the audio
      */
     @JvmField
-    val playerOptions: AudioPlayerResources,
+    val resources: AudioPlayerResources,
     /**
      * Output format to use throughout this processing cycle
      */

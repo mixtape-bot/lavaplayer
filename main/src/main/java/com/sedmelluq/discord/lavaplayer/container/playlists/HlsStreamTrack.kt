@@ -3,7 +3,7 @@ package com.sedmelluq.discord.lavaplayer.container.playlists
 import com.sedmelluq.discord.lavaplayer.source.stream.MpegTsM3uStreamAudioTrack
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import com.sedmelluq.lava.track.info.AudioTrackInfo
 
 /**
  * @param trackInfo            Track info
