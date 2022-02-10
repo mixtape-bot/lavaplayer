@@ -107,7 +107,8 @@ data class SoundCloudTrackModel(
     val permalinkUrl: String = "",
     @SerialName("artwork_url")
     val artworkUrl: String? = "",
-    val duration: Long = -1L,
+    @SerialName("full_duration")
+    val fullDuration: Long = -1L,
     val media: Media = Media(emptyList()),
     val policy: SoundCloudTrackPolicy = SoundCloudTrackPolicy.Unknown
 ) : SoundCloudResource() {
@@ -122,7 +123,7 @@ data class SoundCloudTrackModel(
     fun getTrackInfo(identifier: String): AudioTrackInfo = BasicAudioTrackInfo(
         title = title,
         author = user?.username ?: "Unknown Artist",
-        length = duration,
+        length = fullDuration,
         uri = permalinkUrl,
         artworkUrl = artworkUrl ?: user?.avatarUrl?.replace("large.jpg", "original.jpg"),
         identifier = identifier

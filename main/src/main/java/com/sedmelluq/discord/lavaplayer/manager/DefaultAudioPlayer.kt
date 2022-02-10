@@ -15,8 +15,10 @@ import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame
 import com.sedmelluq.lava.common.tools.exception.FriendlyException
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.buffer
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -63,8 +65,8 @@ class DefaultAudioPlayer(
     override val playingTrack: AudioTrack?
         get() = activeTrack
 
-    override val events: SharedFlow<AudioEvent>
-        get() = eventFlow
+    override val events: Flow<AudioEvent>
+        get() = eventFlow.buffer(UNLIMITED)
 
     @Volatile
     private var activeTrack: InternalAudioTrack? = null
@@ -289,8 +291,10 @@ class DefaultAudioPlayer(
     }
 
     private fun dispatchEvent(event: AudioEvent) {
-        log.debug { "Firing an event with class ${event::class.qualifiedName}" }
-        eventFlow.tryEmit(event)
+        launch {
+            log.debug { "Firing an event with class ${event::class.qualifiedName}" }
+            eventFlow.emit(event)
+        }
     }
 
     private fun handleTerminator(track: InternalAudioTrack) {

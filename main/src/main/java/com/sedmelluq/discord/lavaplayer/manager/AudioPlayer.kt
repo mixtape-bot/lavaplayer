@@ -5,7 +5,7 @@ import com.sedmelluq.discord.lavaplayer.manager.event.AudioEvent
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrameProvider
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.Flow
 
 /**
  * An audio player that is capable of playing audio tracks and provides audio frames from the currently playing track.
@@ -29,7 +29,7 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
     /**
      * The event flow for this player.
      */
-    val events: SharedFlow<AudioEvent>
+    val events: Flow<AudioEvent>
 
     /**
      * @param track The track to start playing

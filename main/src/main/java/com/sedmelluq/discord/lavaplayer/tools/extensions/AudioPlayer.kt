@@ -5,11 +5,10 @@ import com.sedmelluq.discord.lavaplayer.manager.event.AudioEvent
 import com.sedmelluq.discord.lavaplayer.manager.event.AudioEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 @PublishedApi
@@ -28,11 +27,14 @@ inline fun <reified T : AudioEvent> AudioPlayer.on(
     scope: CoroutineScope = this,
     noinline block: suspend T.() -> Unit
 ): Job {
-    return events.buffer(UNLIMITED).filterIsInstance<T>()
+    return events
+        .filterIsInstance<T>()
         .onEach { event ->
-            event
-                .runCatching { block() }
-                .onFailure { audioPlayerOnLog.error(it) { "Error occurred while handling event ${event::class.qualifiedName}" } }
+            launch {
+                event
+                    .runCatching { block() }
+                    .onFailure { audioPlayerOnLog.error(it) { "Error occurred while handling event ${event::class.qualifiedName}" } }
+            }
         }
         .launchIn(scope)
 }

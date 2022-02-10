@@ -13,11 +13,8 @@ import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoadResultAdapter
 import com.sedmelluq.lava.common.tools.exception.FriendlyException
 import com.sedmelluq.lava.common.tools.io.MessageInput
 import com.sedmelluq.lava.common.tools.io.MessageOutput
-import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.runBlocking
-import lavaplayer.demo.BotApplicationManager
-import lavaplayer.demo.BotGuildContext
-import lavaplayer.demo.MessageDispatcher
+import lavaplayer.demo.*
 import lavaplayer.demo.controller.BotCommandHandler
 import lavaplayer.demo.controller.BotController
 import lavaplayer.demo.controller.BotControllerFactory
@@ -25,15 +22,17 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.managers.AudioManager
-import net.iharder.Base64
+import org.apache.commons.codec.binary.Base64
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 import kotlin.math.max
 import kotlin.system.measureNanoTime
 import kotlin.time.ExperimentalTime
 
+@Suppress("unused")
 class MusicController(private val manager: BotApplicationManager, private val guild: Guild) : BotController {
     companion object {
         private val log = LoggerFactory.getLogger(MusicController::class.java)
@@ -74,7 +73,7 @@ class MusicController(private val manager: BotApplicationManager, private val gu
     }
 
     private val player = manager.playerManager.createPlayer()
-    private val outputChannel = atomic<TextChannel?>(null)
+    private val outputChannel = AtomicReference<TextChannel?>(null)
     private val scheduler = MusicScheduler(player, GlobalDispatcher(), manager.executorService)
     private val equalizer = EqualizerFactory()
 
@@ -119,15 +118,15 @@ class MusicController(private val manager: BotApplicationManager, private val gu
         }
 
         outputStream.finish()
-        message.channel.sendFile(Base64.encodeBytes(baos.toByteArray()).encodeToByteArray(), "track.txt").queue()
+        message.channel.sendFile(Base64.encodeBase64String(baos.toByteArray()).encodeToByteArray(), "track.txt").queue()
     }
 
     @BotCommandHandler
     private fun deserialize(message: Message, content: String) {
-        outputChannel.value = message.channel as TextChannel
+        outputChannel.mutableValue = message.channel as TextChannel
         connectToInvokerVc(message, guild.audioManager)
 
-        val bytes = Base64.decode(content)
+        val bytes = Base64.decodeBase64(content)
         val inputStream = MessageInput(ByteArrayInputStream(bytes))
 
         while (true) {
@@ -271,7 +270,7 @@ class MusicController(private val manager: BotApplicationManager, private val gu
 
     @OptIn(ExperimentalTime::class)
     private fun addTrack(message: Message, identifier: String, now: Boolean, first: Boolean) {
-        outputChannel.value = message.channel as TextChannel
+        outputChannel.mutableValue = message.channel as TextChannel
 
         val itemLoader = manager.playerManager.items.createItemLoader(identifier)
         itemLoader.resultHandler = object : ItemLoadResultAdapter() {
@@ -360,11 +359,11 @@ class MusicController(private val manager: BotApplicationManager, private val gu
 
     private inner class GlobalDispatcher : MessageDispatcher {
         override fun sendMessage(message: String, success: Consumer<Message>, failure: Consumer<Throwable>) {
-            outputChannel.value?.sendMessage(message)?.queue(success, failure)
+            outputChannel.mutableValue?.sendMessage(message)?.queue(success, failure)
         }
 
         override fun sendMessage(message: String) {
-            outputChannel.value?.sendMessage(message)?.queue()
+            outputChannel.mutableValue?.sendMessage(message)?.queue()
         }
     }
 }

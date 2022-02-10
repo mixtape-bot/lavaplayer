@@ -59,12 +59,7 @@ object DataFormatTools {
      * @return The resulting map
      */
     fun convertToMapLayout(pairs: List<NameValuePair>): Map<String, String> {
-        val map: MutableMap<String, String> = mutableMapOf()
-        for (pair in pairs) {
-            map[pair.name] = pair.value
-        }
-
-        return map
+        return pairs.associate { it.name to it.value }
     }
 
     fun decodeUrlEncodedItems(input: String, escapedSeparator: Boolean): Map<String, String> {

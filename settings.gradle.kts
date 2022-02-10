@@ -3,6 +3,7 @@ include("main")
 include("track-info")
 include("natives")
 include("testbot")
+include("downloader")
 include(":extensions:ip-rotator")
 
 pluginManagement {

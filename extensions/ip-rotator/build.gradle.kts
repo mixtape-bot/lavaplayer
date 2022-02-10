@@ -14,7 +14,7 @@ dependencies {
     compileOnly(project(":main"))
     implementation("io.github.microutils:kotlin-logging:2.1.0")
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-RC")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     api("org.slf4j:slf4j-api:1.7.32")
 }
 

@@ -15,13 +15,12 @@ project.version = versionDef
 
 dependencies {
     /* kotlin */
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     /* lavaplayer */
     implementation("com.sedmelluq:lavaplayer-natives:2.0.0")
-    api("com.sedmelluq:lava-track-info:1.0")
+    api("com.sedmelluq:lava-track-info:1.0.1")
     api("com.sedmelluq:lava-common:1.2.9")
 
     /* other */

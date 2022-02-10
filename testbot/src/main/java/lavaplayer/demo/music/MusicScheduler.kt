@@ -4,21 +4,24 @@ import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer
 import com.sedmelluq.discord.lavaplayer.manager.event.AudioEventAdapter
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
-import kotlinx.atomicfu.atomic
 import lavaplayer.demo.MessageDispatcher
+import lavaplayer.demo.getValue
+import lavaplayer.demo.setValue
 import net.dv8tion.jda.api.entities.Message
 import java.util.concurrent.BlockingDeque
 import java.util.concurrent.LinkedBlockingDeque
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class MusicScheduler(
     private val player: AudioPlayer,
     private val messageDispatcher: MessageDispatcher,
     executorService: ScheduledExecutorService
 ) : AudioEventAdapter(), Runnable {
-    private var boxMessage: Message? by atomic(null)
-    private var creatingBoxMessage: Boolean by atomic(false)
+    private var boxMessage by AtomicReference<Message?>(null)
+    private var creatingBoxMessage by AtomicBoolean(false)
 
     val queue: BlockingDeque<AudioTrack> = LinkedBlockingDeque()
 

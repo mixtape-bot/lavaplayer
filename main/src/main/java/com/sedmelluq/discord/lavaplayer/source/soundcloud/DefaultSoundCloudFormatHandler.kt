@@ -6,7 +6,6 @@ class DefaultSoundCloudFormatHandler : SoundCloudFormatHandler {
 
         private fun findFormat(formats: List<SoundCloudTrackFormat>, type: FormatType) =
             formats.find { type.matches(it) }
-
     }
 
     override fun chooseBestFormat(formats: List<SoundCloudTrackFormat>): SoundCloudTrackFormat {

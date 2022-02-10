@@ -37,3 +37,12 @@ json-samples/
 
 # env
 *.env
+
+# graveyard
+graveyard
+
+# jars
+*.jar
+
+# downloader
+*[.mp3, .wav, .opus, .pcm, .flac]
