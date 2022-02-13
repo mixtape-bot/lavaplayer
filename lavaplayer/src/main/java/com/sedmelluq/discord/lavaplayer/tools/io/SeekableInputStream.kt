@@ -1,5 +1,6 @@
 package com.sedmelluq.discord.lavaplayer.tools.io
 
+import com.sedmelluq.discord.lavaplayer.tools.extensions.onComplete
 import com.sedmelluq.lava.track.info.AudioTrackInfoProvider
 import java.io.EOFException
 import java.io.IOException
@@ -92,4 +93,17 @@ abstract class SeekableInputStream(
             else -> seekHard(position)
         }
     }
+
+    /**
+     * Seek to the position before invoking [block]
+     *
+     * @param block Code to run
+     */
+    fun <T> rewindAfter(block: (SeekableInputStream) -> T): T {
+        val pos = position
+        return runCatching(block)
+            .onComplete { seek(pos) }
+            .getOrThrow()
+    }
+
 }

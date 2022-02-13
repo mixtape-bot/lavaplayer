@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":lavaplayer"))
+    implementation(project(":lava-ext-format-xm"))
 
     implementation(libs.bundles.common)
 

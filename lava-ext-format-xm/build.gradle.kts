@@ -3,8 +3,8 @@ plugins {
     `lava-published-module`
 }
 
-val moduleName = "lavaplayer-ext-ip-rotator"
-version = "0.3.1"
+val moduleName = "lavaplayer-ext-format-xm"
+version = "0.1.0"
 
 kotlin {
     explicitApi()
@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.bundles.common)
 
     implementation(libs.kotlin.logging)
+    implementation(libs.ibxm)
 
     api(libs.slf4j.api)
 }
@@ -27,7 +28,7 @@ val sourcesJar by tasks.registering(Jar::class) {
 
 publishing {
     publications {
-        create<MavenPublication>("IpRotator") {
+        create<MavenPublication>("ExtFormatXM") {
             from(components["java"])
             artifactId = moduleName
             artifact(sourcesJar)

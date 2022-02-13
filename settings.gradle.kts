@@ -4,7 +4,7 @@ include("lava-common")
 include("lava-track-info")
 include("lava-natives")
 include("lava-ext-ip-rotator")
-include("lava-ext-xm-format")
+include("lava-ext-format-xm")
 
 include("testbot")
 
@@ -44,9 +44,11 @@ fun VersionCatalogBuilder.common() {
     // misc
     alias("okio").to("com.squareup.okio", "okio").version("1.17.2")
     alias("jaffree").to("com.github.kokorin.jaffree", "jaffree").version("2021.12.30")
-    alias("aac").to("com.github.walkyst.JAADec-fork", "jaadec-ext-aac").version("0.1.3")
     alias("jsoup").to("org.jsoup", "jsoup").version("1.14.3")
     alias("jda").to("net.dv8tion", "JDA").version("4.4.0_352")
+
+    alias("aac").to("com.github.walkyst.JAADec-fork", "jaadec-ext-aac").version("0.1.3")
+    alias("ibxm").to("com.github.walkyst", "ibxm-fork").version("a75")
 
     /* bundles */
     bundle("common", listOf("kotlinx-coroutines", "kotlinx-atomicfu", "kotlin-reflect"))

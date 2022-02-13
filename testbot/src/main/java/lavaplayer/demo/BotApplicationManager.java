@@ -1,9 +1,12 @@
 package lavaplayer.demo;
 
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
+import com.sedmelluq.lava.extensions.format.xm.XmContainerProbe;
 import lavaplayer.demo.controller.BotCommandMappingHandler;
 import lavaplayer.demo.controller.BotController;
 import lavaplayer.demo.controller.BotControllerManager;
@@ -23,10 +26,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.registerLocalSources;
-import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.registerRemoteSources;
-
 public class BotApplicationManager extends ListenerAdapter {
+    private static final MediaContainerRegistry EXTENDED_REGISTRY = MediaContainerRegistry.DEFAULT_REGISTRY.extend(XmContainerProbe.INSTANCE);
     private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);
 
     private final Map<Long, BotGuildContext> guildContexts;
@@ -43,8 +44,9 @@ public class BotApplicationManager extends ListenerAdapter {
         playerManager = new DefaultAudioPlayerManager();
         playerManager.getConfiguration().useFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
 
-        registerRemoteSources(playerManager);
-        registerLocalSources(playerManager);
+        SourceRegistry.registerRemoteSources(playerManager);
+        SourceRegistry.registerLocalSources(playerManager, BotApplicationManager.EXTENDED_REGISTRY);
+
         executorService = Executors.newScheduledThreadPool(1, new DaemonThreadFactory("bot"));
     }
 
