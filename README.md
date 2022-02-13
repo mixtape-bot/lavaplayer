@@ -14,6 +14,16 @@ That being said, don't expect me to help you with migrating. If you however want
 
 ###### _Good Luck!_
 
+## 📦 modules
+
+- **[lava-common](/lava-common):** common tools
+- **[lava-ext-ip-rotator](/lava-ext-ip-rotator):** adds ip rotation utilities
+- **[lava-ext-format-xm](/lava-ext-format-xm):** adds format for XM
+- **[lava-natives](/lava-natives):** native libraries used by lavaplayer
+- **[lava-track-info](/lava-track-info):** track info classes
+- **[lavaplayer](/lavaplayer):** the main module
+- **[testbot](/testbot):** testing bot used in development
+
 ---
 
 Licensed under **Apache 2.0**
