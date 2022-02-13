@@ -1,6 +1,6 @@
 plugins {
-    `java-library`
-    `maven-publish`
+    `lava-module`
+    `lava-published-module`
 }
 
 val moduleName = "lavaplayer-natives"

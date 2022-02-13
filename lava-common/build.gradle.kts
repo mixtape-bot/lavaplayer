@@ -1,16 +1,17 @@
 plugins {
-    `java-library`
-    `maven-publish`
+    `lava-module`
+    `lava-published-module`
 }
 
 val moduleName = "lava-common"
 version = "1.2.9"
 
 dependencies {
-    implementation("io.github.microutils:kotlin-logging:2.1.21")
-    implementation("commons-io:commons-io:2.11.0")
+    implementation(libs.bundles.common)
+    implementation(libs.kotlin.logging)
+    implementation(libs.apache.commons.io)
 
-    api("org.slf4j:slf4j-api:1.7.33")
+    api(libs.slf4j.api)
 }
 
 kotlin {

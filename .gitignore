@@ -23,17 +23,8 @@ testbot/src/main/java/local
 
 *.log
 
-# json samples
-json-samples/
-
 # env
 *.env
 
 # graveyard
-graveyard
-
-# jars
-*.jar
-
-# downloader
-*[.mp3, .wav, .opus, .pcm, .flac]
+dev/

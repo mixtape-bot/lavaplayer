@@ -1,19 +1,17 @@
 plugins {
-    java
     application
+    `lava-module`
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
+    implementation(project(":lavaplayer"))
 
-    implementation(project(":main"))
+    implementation(libs.bundles.common)
 
-    implementation("net.dv8tion:JDA:4.3.0_285") {
+    implementation(libs.logback)
+    implementation(libs.jda) {
         exclude(group = "club.minnced", module = "opus-java")
     }
-
-    implementation("ch.qos.logback:logback-classic:1.2.10")
 }
 
 application {

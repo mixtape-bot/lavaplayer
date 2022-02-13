@@ -48,7 +48,9 @@ public class NativeLibraryLoader(
             if (!isPosix) {
                 Files.createDirectories(path)
             } else {
-                val attributes = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxrwx"))
+                val attributes = PosixFilePermissions.asFileAttribute(
+                    PosixFilePermissions.fromString("rwxrwxrwx")
+                )
 
                 Files.createDirectories(path, attributes)
             }

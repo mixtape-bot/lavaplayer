@@ -2,10 +2,8 @@ import lol.dimensional.gradle.dsl.Version
 import lol.dimensional.gradle.dsl.ReleaseType
 
 plugins {
-    `java-library`
-    `maven-publish`
-
-    kotlin("plugin.serialization")
+    `lava-module`
+    `lava-published-module`
 }
 
 val moduleName = "lava-track-info"
@@ -14,11 +12,12 @@ val versionDef = Version(1, 0, 1, release = ReleaseType.Final)
 project.version = versionDef
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.2")
-    implementation("io.github.microutils:kotlin-logging:2.1.21")
+    implementation(libs.bundles.common)
 
-    api("org.slf4j:slf4j-api:1.7.33")
-    api("com.sedmelluq:lava-common:1.2.9")
+    implementation(libs.kotlin.logging)
+
+    api(libs.slf4j.api)
+    api(libs.lava.common)
 }
 
 val sourcesJar by tasks.registering(Jar::class) {

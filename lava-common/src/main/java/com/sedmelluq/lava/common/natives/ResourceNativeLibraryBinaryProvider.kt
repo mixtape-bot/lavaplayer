@@ -9,7 +9,8 @@ public class ResourceNativeLibraryBinaryProvider(classLoaderSample: Class<*>?, p
         private val log = KotlinLogging.logger {  }
     }
 
-    private val classLoaderSample: Class<*> = classLoaderSample ?: ResourceNativeLibraryBinaryProvider::class.java
+    private val classLoaderSample: Class<*> = classLoaderSample
+        ?: ResourceNativeLibraryBinaryProvider::class.java
 
     override fun getLibraryStream(systemType: SystemType, libraryName: String): InputStream? {
         val resourcePath = nativesRoot + systemType.formatSystemName() + "/" + systemType.formatLibraryName(libraryName)

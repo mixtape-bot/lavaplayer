@@ -1,11 +1,7 @@
 package lavaplayer.demo;
 
-import com.sedmelluq.discord.lavaplayer.manager.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.manager.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.manager.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.loader.ItemLoadResult;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory;
 import lavaplayer.demo.controller.BotCommandMappingHandler;
@@ -27,7 +23,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.*;
+import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.registerLocalSources;
+import static com.sedmelluq.discord.lavaplayer.source.common.SourceRegistry.registerRemoteSources;
 
 public class BotApplicationManager extends ListenerAdapter {
     private static final Logger log = LoggerFactory.getLogger(BotApplicationManager.class);

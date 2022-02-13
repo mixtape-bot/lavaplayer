@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag
 object Bootstrap {
     @JvmStatic
     fun main(args: Array<out String>) {
-        val token = checkNotNull(args.firstOrNull()) {
+        val token = checkNotNull(args.firstOrNull() ?: System.getenv("BOT_TOKEN")) {
             "BOT_TOKEN variable must not be null"
         }
 
