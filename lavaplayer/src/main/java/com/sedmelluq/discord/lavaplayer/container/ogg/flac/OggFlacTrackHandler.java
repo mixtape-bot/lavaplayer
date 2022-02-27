@@ -43,7 +43,7 @@ public class OggFlacTrackHandler implements OggTrackHandler {
     }
 
     @Override
-    public void initialise(AudioProcessingContext context, long timecode, long desiredTimecode) {
+    public void initialize(AudioProcessingContext context, long timecode, long desiredTimecode) {
         downstream = AudioPipelineFactory.create(context,
             new PcmFormat(info.stream.channelCount, info.stream.sampleRate));
         downstream.seekPerformed(desiredTimecode, timecode);

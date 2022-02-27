@@ -16,5 +16,5 @@ interface MpegFileTrackProvider : TrackProvider {
      * @param trackConsumer Track consumer which defines the track this will provide and the consumer for packets.
      * @return Returns true if it had enough information for initialisation.
      */
-    fun initialise(trackConsumer: MpegTrackConsumer): Boolean
+    fun initialize(trackConsumer: MpegTrackConsumer): Boolean
 }

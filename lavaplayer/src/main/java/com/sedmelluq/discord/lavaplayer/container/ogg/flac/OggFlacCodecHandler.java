@@ -13,10 +13,13 @@ import java.nio.ByteBuffer;
  * Loader for an OGG FLAC track from an OGG packet stream.
  */
 public class OggFlacCodecHandler implements OggCodecHandler {
+    public static final OggFlacCodecHandler INSTANCE = new OggFlacCodecHandler();
     private static final int FLAC_IDENTIFIER = ByteBuffer.wrap(new byte[]{0x7F, 'F', 'L', 'A'}).getInt();
 
     private static final int NATIVE_FLAC_HEADER_OFFSET = 9;
     private static final int NATIVE_FLAC_HEADER = ByteBuffer.wrap(new byte[]{'f', 'L', 'a', 'C'}).getInt();
+
+    private OggFlacCodecHandler() {}
 
     @Override
     public boolean isMatchingIdentifier(int identifier) {

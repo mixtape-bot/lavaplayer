@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.bundles.common)
 
     implementation(libs.kotlin.logging)
+    implementation(libs.kx.ser.core)
 
     api(libs.slf4j.api)
     api(libs.lava.common)

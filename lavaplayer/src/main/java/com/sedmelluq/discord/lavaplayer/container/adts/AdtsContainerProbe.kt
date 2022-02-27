@@ -29,7 +29,9 @@ object AdtsContainerProbe : MediaContainerProbe {
         }
 
         log.debug { "Track ${reference.identifier} is an ADTS stream." }
-        return MediaContainerDetectionResult.supportedFormat(this, null, AudioTrackInfoBuilder.create(reference, inputStream).build())
+        return MediaContainerDetectionResult.supportedFormat(this,
+            AudioTrackInfoBuilder.create(reference, inputStream).build(),
+            null)
     }
 
     override fun createTrack(parameters: String?, trackInfo: AudioTrackInfo, inputStream: SeekableInputStream): AudioTrack =

@@ -74,7 +74,7 @@ class WavFileLoader(private val inputStream: SeekableInputStream) {
     }
 
     /**
-     * Initialise a WAV track stream.
+     * initialize a WAV track stream.
      *
      * @param context Configuration and output information for processing
      * @return The WAV track stream which can produce frames.

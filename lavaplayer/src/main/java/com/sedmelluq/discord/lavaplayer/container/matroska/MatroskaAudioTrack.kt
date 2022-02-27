@@ -60,7 +60,7 @@ class MatroskaAudioTrack(trackInfo: AudioTrackInfo, private val inputStream: See
             }
 
             log.debug { "Starting to play track with codec ${trackConsumer.track.codecId}" }
-            trackConsumer.initialise()
+            trackConsumer.initialize()
             success = true
         } finally {
             if (!success && trackConsumer != null) {

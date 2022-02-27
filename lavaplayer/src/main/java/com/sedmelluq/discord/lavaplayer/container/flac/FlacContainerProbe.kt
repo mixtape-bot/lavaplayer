@@ -41,7 +41,7 @@ object FlacContainerProbe : MediaContainerProbe {
             length = fileInfo.duration
         }.build()
 
-        return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
+        return MediaContainerDetectionResult.supportedFormat(this, trackInfo, null)
     }
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false

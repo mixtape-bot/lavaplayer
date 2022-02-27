@@ -17,7 +17,7 @@ open class DefaultItemLoaderFactory(internal val sourceRegistry: SourceRegistry)
     companion object {
         private fun createThreadPool() = ThreadPoolExecutor(
             1,
-            10,
+            5000,
             30L,
             TimeUnit.SECONDS,
             SynchronousQueue(false),

@@ -26,7 +26,7 @@ abstract class ProbingItemSourceManager(
 
     protected fun handleLoadResult(result: MediaContainerDetectionResult?): AudioItem? = if (result != null) {
         when {
-            result.isReference ->
+            result.reference != null ->
                 result.reference
 
             !result.isContainerDetected ->
@@ -35,7 +35,7 @@ abstract class ProbingItemSourceManager(
             !result.isSupportedFile ->
                 friendlyError(result.unsupportedReason)
 
-            else -> createTrack(result.trackInfo, result.containerDescriptor)
+            else -> createTrack(result.trackInfo ?: friendlyError("No track info present."), result.containerDescriptor)
         }
     } else {
         null

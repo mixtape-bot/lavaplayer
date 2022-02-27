@@ -86,10 +86,10 @@ public class Mp3TrackProvider implements AudioTrackInfoProvider, Closeable, Trac
         channelCount = Mp3Decoder.getFrameChannelCount(frameBuffer, 0);
         downstream = context != null ? AudioPipelineFactory.create(context, new PcmFormat(channelCount, sampleRate)) : null;
 
-        initialiseSeeker();
+        initializeSeeker();
     }
 
-    private void initialiseSeeker() throws IOException {
+    private void initializeSeeker() throws IOException {
         long startPosition = frameReader.getFrameStartPosition();
         frameReader.fillFrameBuffer();
 

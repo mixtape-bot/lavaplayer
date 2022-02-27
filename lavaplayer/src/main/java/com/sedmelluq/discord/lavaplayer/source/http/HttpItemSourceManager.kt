@@ -107,7 +107,7 @@ class HttpItemSourceManager @JvmOverloads constructor(
             val redirectUrl = HttpClientTools.getRedirectLocation(reference.identifier!!, inputStream.currentResponse!!)
             when {
                 redirectUrl != null ->
-                    return MediaContainerDetectionResult.refer(null, AudioReference(redirectUrl, null))
+                    return MediaContainerDetectionResult.refer(null, AudioReference(redirectUrl))
 
                 statusCode == HttpStatus.SC_NOT_FOUND ->
                     return null

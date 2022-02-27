@@ -26,7 +26,7 @@ class VorbisDecoder : NativeResourceHolder() {
      * @param infoBuffer  Identification header, including the 'vorbis' string.
      * @param setupBuffer Setup header (also known as codebook header), including the 'vorbis' string.
      */
-    fun initialise(infoBuffer: ByteBuffer, setupBuffer: ByteBuffer) {
+    fun initialize(infoBuffer: ByteBuffer, setupBuffer: ByteBuffer) {
         checkNotReleased()
         require(infoBuffer.isDirect && setupBuffer.isDirect) {
             "Buffer argument must be a direct buffer."
@@ -41,8 +41,9 @@ class VorbisDecoder : NativeResourceHolder() {
             setupOffset = setupBuffer.position(),
             setupLength = setupBuffer.remaining()
         )
+
         check(initialized) {
-            "Could not initialise library."
+            "Could not initialize library."
         }
 
         channelCount = library.getChannelCount(instance)

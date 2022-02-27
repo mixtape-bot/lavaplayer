@@ -3,7 +3,7 @@ plugins {
     `lava-published-module`
 }
 
-val moduleName = "lavaplayer-ext-format-xm"
+val moduleName = "lava-ext-format-xm"
 version = "0.1.0"
 
 kotlin {

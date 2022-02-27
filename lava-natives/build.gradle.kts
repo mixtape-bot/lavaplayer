@@ -3,12 +3,12 @@ plugins {
     `lava-published-module`
 }
 
-val moduleName = "lavaplayer-natives"
+val moduleName = "lava-natives"
 version = "2.0.0"
 
 publishing {
     publications {
-        create<MavenPublication>("mavenJava") {
+        create<MavenPublication>("Natives") {
             from(components["java"])
             artifactId = moduleName
         }

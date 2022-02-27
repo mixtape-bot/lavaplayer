@@ -43,7 +43,7 @@ object Mp3ContainerProbe : MediaContainerProbe {
                 isStream = !file.isSeekable
             }
 
-            MediaContainerDetectionResult.supportedFormat(this, null, trackInfo.build())
+            MediaContainerDetectionResult.supportedFormat(this, trackInfo.build(), null)
         }
     }
 

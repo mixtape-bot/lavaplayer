@@ -51,7 +51,7 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
     }
 
     @Override
-    public void initialise(AudioProcessingContext context, long timecode, long desiredTimecode) throws IOException {
+    public void initialize(AudioProcessingContext context, long timecode, long desiredTimecode) throws IOException {
         ByteBuffer infoBuffer = ByteBuffer.allocateDirect(infoPacket.length);
         infoBuffer.put(infoPacket);
         infoBuffer.flip();
@@ -61,7 +61,7 @@ public class OggVorbisTrackHandler implements OggTrackHandler {
         }
 
         broker.consumeNext(packetInputStream, Integer.MAX_VALUE, Integer.MAX_VALUE);
-        decoder.initialise(infoBuffer, broker.getBuffer());
+        decoder.initialize(infoBuffer, broker.getBuffer());
 
         broker.resetAndCompact();
 

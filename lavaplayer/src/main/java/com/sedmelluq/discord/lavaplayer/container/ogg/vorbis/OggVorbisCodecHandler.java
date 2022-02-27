@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class OggVorbisCodecHandler implements OggCodecHandler {
+    public static final OggVorbisCodecHandler INSTANCE = new OggVorbisCodecHandler();
+
     private static final int VORBIS_IDENTIFIER = ByteBuffer.wrap(new byte[]{0x01, 'v', 'o', 'r'}).getInt();
 
     // These are arbitrary - there is no limit specified in Vorbis specification, Opus limit used as reference.
@@ -15,6 +17,9 @@ public class OggVorbisCodecHandler implements OggCodecHandler {
     private static final int MAX_COMMENTS_READ_LENGTH = 1024 * 1024 * 120; // 120 MB
 
     private static final byte[] COMMENT_PACKET_START = new byte[]{0x03, 'v', 'o', 'r', 'b', 'i', 's'};
+
+    private OggVorbisCodecHandler() {
+    }
 
     @Override
     public boolean isMatchingIdentifier(int identifier) {

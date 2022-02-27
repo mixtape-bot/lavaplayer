@@ -174,7 +174,7 @@ public class OpusPacketRouter {
         if (AudioPipelineFactory.isProcessingRequired(context, inputFormat)) {
             if (opusDecoder == null) {
                 log.debug("Enabling re-encode mode on opus track.");
-                initialiseDecoder();
+                initializeDecoder();
                 AudioFrameVolumeChanger.apply(context);
             }
         } else {
@@ -188,7 +188,7 @@ public class OpusPacketRouter {
         }
     }
 
-    private void initialiseDecoder() {
+    private void initializeDecoder() {
         opusDecoder = new OpusDecoder(inputFrequency, inputChannels);
 
         try {

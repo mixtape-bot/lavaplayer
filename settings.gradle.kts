@@ -22,7 +22,7 @@ dependencyResolutionManagement {
 
 fun VersionCatalogBuilder.lava() {
     alias("lava-common").to("com.sedmelluq", "lava-common").version("1.2.9")
-    alias("lava-natives").to("com.sedmelluq", "lavaplayer-natives").version("2.0.0")
+    alias("lava-natives").to("com.sedmelluq", "lava-natives").version("2.0.0")
     alias("lava-track-info").to("com.sedmelluq", "lava-track-info").version("1.0.1")
 }
 
@@ -31,6 +31,7 @@ fun VersionCatalogBuilder.common() {
 
     /* serialization */
     alias("kx-ser-json").to("org.jetbrains.kotlinx", "kotlinx-serialization-json").version("1.3.1")
+    alias("kx-ser-core").to("org.jetbrains.kotlinx", "kotlinx-serialization-core").version("1.3.1")
 
     /* kotlin */
     alias("kotlinx-coroutines").to("org.jetbrains.kotlinx", "kotlinx-coroutines-core").versionRef("kotlinx-coroutines")

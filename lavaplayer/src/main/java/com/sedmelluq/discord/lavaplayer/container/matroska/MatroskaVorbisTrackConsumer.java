@@ -72,7 +72,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
     }
 
     @Override
-    public void initialise() {
+    public void initialize() {
         ByteBuffer directPrivateData = ByteBuffer.allocateDirect(track.codecPrivate.length);
 
         directPrivateData.put(track.codecPrivate);
@@ -93,7 +93,7 @@ public class MatroskaVorbisTrackConsumer implements MatroskaTrackConsumer {
 
             directPrivateData.position(directPrivateData.position() + firstHeaderSize + secondHeaderSize);
 
-            decoder.initialise(infoBuffer, directPrivateData);
+            decoder.initialize(infoBuffer, directPrivateData);
 
             channelPcmBuffers = new float[decoder.getChannelCount()][];
 

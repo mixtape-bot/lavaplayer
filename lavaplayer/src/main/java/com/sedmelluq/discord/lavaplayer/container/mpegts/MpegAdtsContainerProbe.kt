@@ -34,7 +34,7 @@ object MpegAdtsContainerProbe : MediaContainerProbe {
                     .apply(tsStream.loadedMetadata)
                     .build()
 
-                return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
+                return MediaContainerDetectionResult.supportedFormat(this, trackInfo, null)
             }
         } catch (ignored: IndexOutOfBoundsException) {
             // TS stream read too far and still did not find required elementary stream - SavedHeadSeekableInputStream throws

@@ -24,7 +24,7 @@ class MatroskaAacTrackConsumer(context: AudioProcessingContext, override val tra
     private lateinit var inputBuffer: ByteBuffer
     private val packetRouter = AacPacketRouter(context)
 
-    override fun initialise() {
+    override fun initialize() {
         log.debug { "Initialising AAC track with expected frequency ${track.audio.samplingFrequency} and channel count ${track.audio.channels}." }
     }
 

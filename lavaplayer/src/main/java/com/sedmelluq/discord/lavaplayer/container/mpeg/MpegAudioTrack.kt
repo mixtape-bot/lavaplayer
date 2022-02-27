@@ -53,7 +53,7 @@ open class MpegAudioTrack(trackInfo: AudioTrackInfo, private val inputStream: Se
 
             log.debug { "Starting to play track with codec ${trackConsumer.track.codecName}" }
 
-            trackConsumer.initialise()
+            trackConsumer.initialize()
             success = true
             trackConsumer
         } catch (e: Exception) {

@@ -36,7 +36,7 @@ object OggContainerProbe : MediaContainerProbe {
             log.warn(e) { "Failed to collect additional information on OGG stream." }
         }
 
-        return MediaContainerDetectionResult.supportedFormat(this, null, infoBuilder.build())
+        return MediaContainerDetectionResult.supportedFormat(this, infoBuilder.build(), null)
     }
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false

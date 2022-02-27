@@ -35,7 +35,7 @@ class SoundCloudOpusSegmentDecoder(private val nextStreamProvider: () -> Seekabl
     @Throws(InterruptedException::class, IOException::class)
     override fun playStream(context: AudioProcessingContext, startPosition: Long, desiredPosition: Long) {
         blueprint!!.loadTrackHandler(obtainStream()).use { handler ->
-            handler.initialise(context, startPosition, desiredPosition)
+            handler.initialize(context, startPosition, desiredPosition)
             handler.provideFrames()
         }
     }

@@ -3,7 +3,7 @@ plugins {
     `lava-published-module`
 }
 
-val moduleName = "lavaplayer-ext-ip-rotator"
+val moduleName = "lava-ext-ip-rotator"
 version = "0.3.1"
 
 kotlin {

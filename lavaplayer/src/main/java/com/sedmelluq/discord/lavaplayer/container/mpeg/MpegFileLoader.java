@@ -152,9 +152,9 @@ public class MpegFileLoader {
      * @return Track audio provider.
      */
     public MpegFileTrackProvider loadReader(MpegTrackConsumer consumer) {
-        if (fragmentedFileReader.initialise(consumer)) {
+        if (fragmentedFileReader.initialize(consumer)) {
             return fragmentedFileReader;
-        } else if (standardFileReader.initialise(consumer)) {
+        } else if (standardFileReader.initialize(consumer)) {
             return standardFileReader;
         } else {
             return null;

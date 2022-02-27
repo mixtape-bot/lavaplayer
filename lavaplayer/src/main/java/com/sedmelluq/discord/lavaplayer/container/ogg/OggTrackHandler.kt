@@ -9,13 +9,13 @@ import java.io.IOException
  */
 interface OggTrackHandler : Closeable {
     /**
-     * Initialises the track stream.
+     * initializes the track stream.
      *
      * @param context Configuration and output information for processing
      * @throws IOException On read error.
      */
     @Throws(IOException::class)
-    fun initialise(context: AudioProcessingContext, timecode: Long, desiredTimecode: Long)
+    fun initialize(context: AudioProcessingContext, timecode: Long, desiredTimecode: Long)
 
     /**
      * Decodes audio frames and sends them to frame consumer.

@@ -8,7 +8,7 @@ import java.nio.channels.ReadableByteChannel
  * @param track Track info.
  */
 class MpegNoopTrackConsumer(override val track: MpegTrackInfo) : MpegTrackConsumer {
-    override fun initialise() = Unit
+    override fun initialize() = Unit
     override fun seekPerformed(requestedTimecode: Long, providedTimecode: Long) = Unit
     override fun flush() = Unit
     override fun consume(channel: ReadableByteChannel, length: Int) = Unit

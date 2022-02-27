@@ -8,13 +8,13 @@ plugins {
 }
 
 repositories {
-    maven("https://maven.dimensional.fun/releases")
+    mavenLocal()
+    mavenCentral()
+
+    //    maven("https://maven.dimensional.fun/releases")
     maven("https://oss.sonatype.org/content/repositories/snapshots")
     maven("https://m2.dv8tion.net/releases")
     maven("https://jitpack.io")
-
-    mavenLocal()
-    mavenCentral()
 }
 
 tasks {

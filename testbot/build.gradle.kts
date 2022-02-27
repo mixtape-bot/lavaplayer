@@ -8,6 +8,7 @@ dependencies {
     implementation(project(":lava-ext-format-xm"))
 
     implementation(libs.bundles.common)
+    implementation("com.soywiz.korlibs.korau:korau-jvm:2.4.10")
 
     implementation(libs.logback)
     implementation(libs.jda) {

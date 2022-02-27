@@ -37,7 +37,7 @@ public class MpegFragmentedFileTrackProvider implements MpegFileTrackProvider {
     }
 
     @Override
-    public boolean initialise(MpegTrackConsumer consumer) {
+    public boolean initialize(MpegTrackConsumer consumer) {
         if (!isFragmented) {
             return false;
         }

@@ -35,7 +35,7 @@ public class MpegStandardFileTrackProvider implements MpegFileTrackProvider {
     }
 
     @Override
-    public boolean initialise(MpegTrackConsumer consumer) {
+    public boolean initialize(MpegTrackConsumer consumer) {
         this.consumer = consumer;
 
         int trackId = consumer.getTrack().trackId;

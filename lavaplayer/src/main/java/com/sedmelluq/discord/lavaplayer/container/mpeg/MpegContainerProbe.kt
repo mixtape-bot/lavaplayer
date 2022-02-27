@@ -44,7 +44,7 @@ object MpegContainerProbe : MediaContainerProbe {
             length = fileReader.duration
         }
 
-        return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo.build())
+        return MediaContainerDetectionResult.supportedFormat(this, trackInfo.build(), null)
     }
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false

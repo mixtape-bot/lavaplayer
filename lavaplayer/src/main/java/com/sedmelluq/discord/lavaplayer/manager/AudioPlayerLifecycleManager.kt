@@ -30,7 +30,7 @@ class AudioPlayerLifecycleManager(
     private var scheduledTask by atomic<ScheduledFuture<*>?>(null)
 
     /**
-     * Initialise the scheduled task.
+     * initialize the scheduled task.
      */
     init {
         val task = scheduler.scheduleAtFixedRate(this, CHECK_INTERVAL, CHECK_INTERVAL, TimeUnit.MILLISECONDS)

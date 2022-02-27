@@ -31,7 +31,6 @@ public object XmContainerProbe : MediaContainerProbe {
         log.debug { "Track ${reference.identifier} is a module." }
         return MediaContainerDetectionResult.supportedFormat(
             this,
-            null,
             BasicAudioTrackInfo(
                 module.songName,
                 MediaContainerDetection.UNKNOWN_ARTIST,
@@ -39,7 +38,8 @@ public object XmContainerProbe : MediaContainerProbe {
                 reference.identifier!!,
                 reference.identifier,
                 null,
-            )
+            ),
+            null
         )
     }
 

@@ -41,7 +41,7 @@ class FlacFileLoader(private val inputStream: SeekableInputStream) {
     }
 
     /**
-     * Initialise a FLAC track stream.
+     * initialize a FLAC track stream.
      *
      * @param context Configuration and output information for processing
      * @return The FLAC track stream which can produce frames.

@@ -346,8 +346,7 @@ class MusicController(private val manager: BotApplicationManager, private val gu
     }
 
     class Factory : BotControllerFactory<MusicController> {
-        override fun getControllerClass(): Class<MusicController> =
-            MusicController::class.java
+        override val controllerClass: Class<MusicController> = MusicController::class.java
 
         override fun create(manager: BotApplicationManager, state: BotGuildContext, guild: Guild): MusicController =
             MusicController(manager, guild)

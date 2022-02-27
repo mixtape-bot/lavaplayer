@@ -12,9 +12,9 @@ interface MpegTrackConsumer {
     val track: MpegTrackInfo
 
     /**
-     * Initialise the consumer, called before first consume()
+     * initialize the consumer, called before first consume()
      */
-    fun initialise()
+    fun initialize()
 
     /**
      * Indicates that the next frame is not a direct continuation of the previous one

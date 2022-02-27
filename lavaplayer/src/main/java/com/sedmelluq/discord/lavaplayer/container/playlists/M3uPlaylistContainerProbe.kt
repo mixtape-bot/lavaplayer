@@ -64,7 +64,7 @@ class M3uPlaylistContainerProbe : MediaContainerProbe {
 
             return if (httpReference != null) {
                 infoBuilder.identifier = httpReference.identifier
-                MediaContainerDetectionResult.supportedFormat(this, TYPE_HLS_OUTER, infoBuilder.build())
+                MediaContainerDetectionResult.supportedFormat(this, infoBuilder.build(), TYPE_HLS_OUTER)
             } else {
                 val reference = AudioReference(
                     identifier = hlsStreamUrl,

@@ -36,7 +36,7 @@ class MediaContainerDetection(
             throw e.wrapUnfriendlyException("Could not read the file for detecting file type.", FriendlyException.Severity.SUSPICIOUS)
         }
 
-        return result ?: MediaContainerDetectionResult.unknownFormat()
+        return result ?: MediaContainerDetectionResult.UNKNOWN_FORMAT
     }
 
     @Throws(IOException::class)

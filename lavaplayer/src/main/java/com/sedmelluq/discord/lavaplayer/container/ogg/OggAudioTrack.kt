@@ -41,7 +41,7 @@ class OggAudioTrack(trackInfo: AudioTrackInfo, private val inputStream: Seekable
 
         while (blueprint != null) {
             blueprint.loadTrackHandler(packetInputStream).use { handler ->
-                handler.initialise(context, 0, 0)
+                handler.initialize(context, 0, 0)
                 handler.provideFrames()
             }
 

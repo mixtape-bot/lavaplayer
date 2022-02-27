@@ -37,12 +37,11 @@ public class BotApplicationManager extends ListenerAdapter {
 
     public BotApplicationManager() {
         guildContexts = new HashMap<>();
-        controllerManager = new BotControllerManager();
 
+        controllerManager = new BotControllerManager();
         controllerManager.registerController(new MusicController.Factory());
 
         playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().useFrameBufferFactory(NonAllocatingAudioFrameBuffer::new);
 
         SourceRegistry.registerRemoteSources(playerManager);
         SourceRegistry.registerLocalSources(playerManager, BotApplicationManager.EXTENDED_REGISTRY);

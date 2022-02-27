@@ -55,7 +55,7 @@ object MatroskaContainerProbe : MediaContainerProbe {
             isStream = false
         )
 
-        return MediaContainerDetectionResult.supportedFormat(this, null, trackInfo)
+        return MediaContainerDetectionResult.supportedFormat(this, trackInfo, null)
     }
 
     override fun matchesHints(hints: MediaContainerHints?): Boolean = false

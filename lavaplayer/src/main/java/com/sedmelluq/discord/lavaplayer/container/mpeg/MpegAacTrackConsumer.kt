@@ -28,7 +28,7 @@ class MpegAacTrackConsumer(context: AudioProcessingContext, override val track: 
     private var inputBuffer = ByteBuffer.allocateDirect(4096)
     private val packetRouter = AacPacketRouter(context)
 
-    override fun initialise() {
+    override fun initialize() {
         log.debug { "Initializing AAC track with expected frequency ${track.sampleRate} and channel count ${track.channelCount}." }
     }
 
