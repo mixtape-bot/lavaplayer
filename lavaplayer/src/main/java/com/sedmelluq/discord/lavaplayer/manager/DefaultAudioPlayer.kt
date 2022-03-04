@@ -19,6 +19,8 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -35,7 +37,7 @@ class DefaultAudioPlayer(
     }
 
     private var _paused by atomic(false)
-    private val trackSwitchLock = Any()
+    private val trackSwitchLock = Mutex()
     private val resources = AudioPlayerResources()
     private val eventFlow = MutableSharedFlow<AudioEvent>(extraBufferCapacity = Int.MAX_VALUE)
 
@@ -86,7 +88,7 @@ class DefaultAudioPlayer(
     /**
      * @param track The track to start playing
      */
-    override fun playTrack(track: AudioTrack?) {
+    override suspend fun playTrack(track: AudioTrack?) {
         startTrack(track, false)
     }
 
@@ -95,11 +97,11 @@ class DefaultAudioPlayer(
      * @param noInterrupt Whether to only start if nothing else is playing
      * @return True if the track was started
      */
-    override fun startTrack(track: AudioTrack?, noInterrupt: Boolean): Boolean {
+    override suspend fun startTrack(track: AudioTrack?, noInterrupt: Boolean): Boolean {
         val newTrack = track as? InternalAudioTrack
         var previousTrack: InternalAudioTrack?
 
-        synchronized(trackSwitchLock) {
+        trackSwitchLock.withLock {
             previousTrack = activeTrack
             if (noInterrupt && previousTrack != null) {
                 return false
@@ -131,15 +133,15 @@ class DefaultAudioPlayer(
     /**
      * Stop currently playing track.
      */
-    override fun stopTrack() {
+    override suspend fun stopTrack() {
         stopWithReason(STOPPED)
     }
 
-    override fun provide(): AudioFrame? {
+    override suspend fun provide(): AudioFrame? {
         return AudioFrameProviderTools.delegateToTimedProvide(this)
     }
 
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
@@ -168,7 +170,7 @@ class DefaultAudioPlayer(
         return null
     }
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean {
         try {
             return provide(targetFrame, 0, TimeUnit.MILLISECONDS)
         } catch (e: Throwable) {
@@ -177,7 +179,7 @@ class DefaultAudioPlayer(
         }
     }
 
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
         lateinit var track: InternalAudioTrack
 
         lastRequestTime = System.currentTimeMillis()
@@ -218,7 +220,7 @@ class DefaultAudioPlayer(
     /**
      * Destroy the player and stop playing track.
      */
-    override fun destroy() {
+    override suspend fun destroy() {
         stopTrack()
         cancel()
     }
@@ -236,7 +238,7 @@ class DefaultAudioPlayer(
      *
      * @param threshold Threshold in milliseconds to use
      */
-    override fun checkCleanup(threshold: Long) {
+    override suspend fun checkCleanup(threshold: Long) {
         val track = playingTrack
         if (track != null && System.currentTimeMillis() - lastRequestTime >= threshold) {
             log.debug { "Triggering cleanup on an audio player playing track $track" }
@@ -248,10 +250,10 @@ class DefaultAudioPlayer(
         return "DefaultAudioPlayer(volume=$volume, isPaused=$isPaused${if (playingTrack != null) ", playingTrack=$playingTrack" else ""})"
     }
 
-    private fun stopWithReason(reason: AudioTrackEndReason) {
+    private suspend fun stopWithReason(reason: AudioTrackEndReason) {
         shadowTrack = null
 
-        synchronized(trackSwitchLock) {
+        trackSwitchLock.withLock {
             val previousTrack = activeTrack
             activeTrack = null
             if (previousTrack != null) {
@@ -261,7 +263,7 @@ class DefaultAudioPlayer(
         }
     }
 
-    private fun provideShadowFrame(): AudioFrame? {
+    private suspend fun provideShadowFrame(): AudioFrame? {
         val shadow = shadowTrack
         var frame: AudioFrame? = null
 
@@ -276,7 +278,7 @@ class DefaultAudioPlayer(
         return frame
     }
 
-    private fun provideShadowFrame(targetFrame: MutableAudioFrame): Boolean {
+    private suspend fun provideShadowFrame(targetFrame: MutableAudioFrame): Boolean {
         val shadow = shadowTrack
         if (shadow != null && shadow.provide(targetFrame)) {
             if (targetFrame.isTerminator) {

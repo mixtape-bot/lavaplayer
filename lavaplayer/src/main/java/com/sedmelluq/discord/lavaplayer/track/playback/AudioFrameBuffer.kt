@@ -27,19 +27,19 @@ interface AudioFrameBuffer : AudioFrameProvider, AudioFrameConsumer {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun waitForTermination()
+    suspend fun waitForTermination()
 
     /**
      * Signal that no more input is expected and if the content frames have been consumed, emit a terminator frame.
      */
-    fun setTerminateOnEmpty()
+    suspend fun setTerminateOnEmpty()
 
     /**
      * Signal that the next frame provided to the buffer will clear the frames before it. This is useful when the next
      * data is not contiguous with the current frame buffer, but the remaining frames in the buffer should be used until
      * the next data arrives to prevent a situation where the buffer cannot provide any frames for a while.
      */
-    fun setClearOnInsert()
+    suspend fun setClearOnInsert()
 
     /**
      * @return Whether the next frame is set to clear the buffer.
@@ -49,7 +49,7 @@ interface AudioFrameBuffer : AudioFrameProvider, AudioFrameConsumer {
     /**
      * Clear the buffer.
      */
-    fun clear()
+    suspend fun clear()
 
     /**
      * Lock the buffer so no more incoming frames are accepted.

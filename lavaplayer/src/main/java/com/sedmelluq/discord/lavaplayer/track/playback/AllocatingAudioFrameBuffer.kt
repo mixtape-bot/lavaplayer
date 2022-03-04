@@ -2,6 +2,8 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.tools.extensions.notifyAll
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -23,9 +25,10 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
     override val fullCapacity: Int = bufferDuration / 20 + 1
     override val remainingCapacity get() = audioFrames.remainingCapacity()
     override val lastInputTimecode: Long
-        get() {
+        get() = runBlocking {
             var lastTimecode: Long? = null
-            synchronized(synchronizer) {
+            /*synchronized(synchronizer)*/
+            lock.withLock {
                 if (!clearOnInsert) {
                     for (frame in audioFrames) {
                         lastTimecode = frame.timecode
@@ -33,13 +36,13 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
                 }
             }
 
-            return lastTimecode!!
+            lastTimecode!!
         }
 
 
     private val audioFrames: ArrayBlockingQueue<AudioFrame> = ArrayBlockingQueue(fullCapacity)
 
-    override fun provide(): AudioFrame? {
+    override suspend fun provide(): AudioFrame? {
         val frame = audioFrames.poll()
             ?: return fetchPendingTerminator()
 
@@ -52,7 +55,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
         var frame = audioFrames.poll()
         if (frame == null) {
             var terminator = fetchPendingTerminator()
@@ -75,12 +78,12 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
         return filterFrame(frame)
     }
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean {
         return passToMutable(provide(), targetFrame)
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
         return passToMutable(provide(timeout, unit), targetFrame)
     }
 
@@ -101,7 +104,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
         return false
     }
 
-    override fun clear() {
+    override suspend fun clear() {
         audioFrames.clear()
     }
 
@@ -116,7 +119,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
     }
 
     @Throws(InterruptedException::class)
-    override fun consume(frame: AudioFrame) {
+    override suspend fun consume(frame: AudioFrame) {
         // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
         // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
         // offer with timeout, check stopping if timed out, then put?
@@ -152,7 +155,7 @@ class AllocatingAudioFrameBuffer(bufferDuration: Int, format: AudioDataFormat, p
         return if (frame == null || frame.volume != 0) frame else ImmutableAudioFrame(frame.timecode, format.silenceBytes, 0, format)
     }
 
-    override fun signalWaiters() {
+    override suspend fun signalWaiters() {
         audioFrames.offer(TerminatorAudioFrame)
     }
 }

@@ -41,7 +41,7 @@ interface AudioTrack : AudioItem {
     /**
      * The current position of this track in milliseconds.
      */
-    var position: Long
+    val position: Long
 
     /**
      * Application specific data for this track.
@@ -49,9 +49,14 @@ interface AudioTrack : AudioItem {
     var userData: Any?
 
     /**
+     * Update the position for the current track.
+     */
+    suspend fun updatePosition(timecode: Long)
+
+    /**
      * Stop the track if it is currently playing
      */
-    fun stop()
+    suspend fun stop()
 
     /**
      * @return Clone of this track which does not share the execution state of this track
@@ -68,7 +73,7 @@ interface AudioTrack : AudioItem {
     /**
      * @param marker Track position marker to place
      */
-    fun setMarker(marker: TrackMarker?)
+    suspend fun setMarker(marker: TrackMarker?)
 
     /**
      * @param klass The expected class of the user data (or a superclass of it).

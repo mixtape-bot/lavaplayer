@@ -18,7 +18,7 @@ interface InternalAudioTrack : AudioTrack, AudioFrameProvider {
      * @param executor             Executor to assign to the track
      * @param applyPrimordialState True if the state previously applied to this track should be copied to new executor.
      */
-    fun assignExecutor(executor: AudioTrackExecutor, applyPrimordialState: Boolean)
+    suspend fun assignExecutor(executor: AudioTrackExecutor, applyPrimordialState: Boolean)
 
     /**
      * Perform any necessary loading and then enter the read/seek loop

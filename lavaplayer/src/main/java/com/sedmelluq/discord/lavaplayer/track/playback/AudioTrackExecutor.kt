@@ -16,12 +16,19 @@ interface AudioTrackExecutor : AudioFrameProvider {
     /**
      * Timecode of the last played frame or in case a seek is in progress, the timecode of the frame being seeked to.
      */
-    var position: Long
+    val position: Long
 
     /**
      * @return Current state of the executor
      */
     val state: AudioTrackState?
+
+    /**
+     * Updates the position of the current track.
+     *
+     * @param timecode The timecode
+     */
+    suspend fun updatePosition(timecode: Long)
 
     /**
      * Execute the track, which means that this thread will fill the frame buffer until the track finishes or is stopped.
@@ -33,14 +40,14 @@ interface AudioTrackExecutor : AudioFrameProvider {
     /**
      * Stop playing the track, terminating the thread that is filling the frame buffer.
      */
-    fun stop()
+    suspend fun stop()
 
     /**
      * Set track position marker.
      *
      * @param marker Track position marker to set.
      */
-    fun setMarker(marker: TrackMarker?)
+    suspend fun setMarker(marker: TrackMarker?)
 
     /**
      * @return True if this track threw an exception before it provided any audio.

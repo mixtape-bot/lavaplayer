@@ -15,6 +15,9 @@ import com.sedmelluq.lava.common.tools.exception.FriendlyException
 import com.sedmelluq.lava.common.tools.exception.friendlyError
 import com.sedmelluq.lava.common.tools.exception.wrapUnfriendlyException
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import java.io.InterruptedIOException
 import java.util.concurrent.TimeUnit
@@ -51,7 +54,8 @@ class LocalAudioTrackExecutor(
     /* other */
     @Volatile
     private var trackException: Throwable? = null
-    private val actionSynchronizer = Any()
+//    private val actionSynchronizer = Any()
+    private val actionLock = Mutex()
     private val markerTracker = TrackMarkerManager()
     private var externalSeekPosition: Long = -1
     private var interruptableForSeek = false
@@ -60,22 +64,8 @@ class LocalAudioTrackExecutor(
         get() = queuedSeek != -1L || useSeekGhosting && audioBuffer.hasClearOnInsert()
 
     override val audioBuffer = configuration.frameBufferFactory.create(bufferDuration, configuration.outputFormat) { queuedStop }
-    override var position: Long
+    override val position: Long
         get() = queuedSeek.takeUnless { it == -1L } ?: lastFrameTimecode
-        set(timecode) {
-            if (!audioTrack.isSeekable) {
-                return
-            }
-
-            synchronized(actionSynchronizer) {
-                queuedSeek = timecode.coerceAtLeast(0)
-                if (!useSeekGhosting) {
-                    audioBuffer.clear()
-                }
-
-                interruptForSeek()
-            }
-        }
 
     override var state: AudioTrackState by _state
 
@@ -128,7 +118,7 @@ class LocalAudioTrackExecutor(
                     e.rethrow()
                 }
             } finally {
-                synchronized(actionSynchronizer) {
+                actionLock.withLock {
                     interrupt = interrupt ?: findInterrupt(null)
                     if (playingThread == Thread.currentThread()) {
                         playingThread = null
@@ -137,6 +127,8 @@ class LocalAudioTrackExecutor(
                     markerTracker.trigger(MarkerState.ENDED)
                     _state.value = AudioTrackState.FINISHED
                 }
+//                synchronized(actionSynchronizer) {
+//                }
 
                 if (interrupt != null) {
                     Thread.currentThread().interrupt()
@@ -147,8 +139,23 @@ class LocalAudioTrackExecutor(
         }
     }
 
-    override fun stop() {
-        synchronized(actionSynchronizer) {
+    override suspend fun updatePosition(timecode: Long) {
+        if (!audioTrack.isSeekable) {
+            return
+        }
+
+        actionLock.withLock {
+            queuedSeek = timecode.coerceAtLeast(0)
+            if (!useSeekGhosting) {
+                audioBuffer.clear()
+            }
+
+            interruptForSeek()
+        }
+    }
+
+    override suspend fun stop() {
+        actionLock.withLock {
             val thread = playingThread
             if (thread != null) {
                 log.debug { "Requesting stop for track ${audioTrack.identifier}" }
@@ -183,7 +190,7 @@ class LocalAudioTrackExecutor(
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun waitOnEnd() {
+    suspend fun waitOnEnd() {
         audioBuffer.setTerminateOnEmpty()
         audioBuffer.waitForTermination()
     }
@@ -193,14 +200,14 @@ class LocalAudioTrackExecutor(
      *
      * @return True if there was a thread to interrupt.
      */
-    fun interrupt(): Boolean {
-        synchronized(actionSynchronizer) {
+    suspend fun interrupt(): Boolean {
+        actionLock.withLock {
             return playingThread?.interrupt() == null
         }
     }
 
-    override fun setMarker(marker: TrackMarker?) {
-        markerTracker[marker] = position
+    override suspend fun setMarker(marker: TrackMarker?) {
+        markerTracker.set(marker, position)
     }
 
     /**
@@ -210,7 +217,7 @@ class LocalAudioTrackExecutor(
      * @param seekExecutor Callback for performing a seek on the track, may be null on a non-seekable track
      */
     @JvmOverloads
-    fun executeProcessingLoop(readExecutor: ReadExecutor, seekExecutor: SeekExecutor?, waitOnEnd: Boolean = true) {
+    suspend fun executeProcessingLoop(readExecutor: ReadExecutor, seekExecutor: SeekExecutor?, waitOnEnd: Boolean = true) {
         var proceed = true
         if (checkPendingSeek(seekExecutor) == SeekResult.EXTERNAL_SEEK) {
             return
@@ -248,13 +255,13 @@ class LocalAudioTrackExecutor(
         }
     }
 
-    private fun setInterruptableForSeek(state: Boolean) {
-        synchronized(actionSynchronizer) { interruptableForSeek = state }
+    private suspend fun setInterruptableForSeek(state: Boolean) {
+        actionLock.withLock { interruptableForSeek = state }
     }
 
-    private fun interruptForSeek() {
+    private suspend fun interruptForSeek() {
         var interrupted = false
-        synchronized(actionSynchronizer) {
+        actionLock.withLock {
             if (interruptableForSeek) {
                 interruptableForSeek = false
                 val nullable = playingThread?.interrupt()
@@ -271,7 +278,7 @@ class LocalAudioTrackExecutor(
         }
     }
 
-    private fun handlePlaybackInterrupt(interruption: InterruptedException?, seekExecutor: SeekExecutor?): Boolean {
+    private suspend fun handlePlaybackInterrupt(interruption: InterruptedException?, seekExecutor: SeekExecutor?): Boolean {
         Thread.interrupted()
         if (checkStopped()) {
             markerTracker.trigger(MarkerState.STOPPED)
@@ -313,13 +320,13 @@ class LocalAudioTrackExecutor(
      * @param seekExecutor Callback for performing a seek on the track
      * @return True if a seek was performed
      */
-    private fun checkPendingSeek(seekExecutor: SeekExecutor?): SeekResult {
+    private suspend fun checkPendingSeek(seekExecutor: SeekExecutor?): SeekResult {
         if (!audioTrack.isSeekable) {
             return SeekResult.NO_SEEK
         }
 
         var seekPosition: Long
-        synchronized(actionSynchronizer) {
+        actionLock.withLock {
             seekPosition = queuedSeek
             if (seekPosition == -1L) {
                 return SeekResult.NO_SEEK
@@ -346,7 +353,7 @@ class LocalAudioTrackExecutor(
         }
     }
 
-    private fun applySeekState(seekPosition: Long) {
+    private suspend fun applySeekState(seekPosition: Long) {
         state = AudioTrackState.SEEKING
         if (useSeekGhosting) {
             audioBuffer.setClearOnInsert()
@@ -358,7 +365,7 @@ class LocalAudioTrackExecutor(
         markerTracker.checkSeekTimecode(seekPosition)
     }
 
-    override fun provide(): AudioFrame? {
+    override suspend fun provide(): AudioFrame? {
         val frame = audioBuffer.provide()
         processProvidedFrame(frame)
 
@@ -366,13 +373,13 @@ class LocalAudioTrackExecutor(
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
         val frame = audioBuffer.provide(timeout, unit)
         processProvidedFrame(frame)
         return frame
     }
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean {
         if (audioBuffer.provide(targetFrame)) {
             processProvidedFrame(targetFrame)
             return true
@@ -382,7 +389,7 @@ class LocalAudioTrackExecutor(
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
         if (audioBuffer.provide(targetFrame, timeout, unit)) {
             processProvidedFrame(targetFrame)
             return true
@@ -391,7 +398,7 @@ class LocalAudioTrackExecutor(
         return true
     }
 
-    private fun processProvidedFrame(frame: AudioFrame?) {
+    private suspend fun processProvidedFrame(frame: AudioFrame?) {
         if (frame != null && !frame.isTerminator) {
             if (!isPerformingSeek) {
                 markerTracker.checkPlaybackTimecode(frame.timecode)

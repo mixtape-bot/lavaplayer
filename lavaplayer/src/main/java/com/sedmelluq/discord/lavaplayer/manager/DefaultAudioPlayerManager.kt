@@ -156,9 +156,8 @@ open class DefaultAudioPlayerManager : DefaultTrackEncoder(), AudioPlayerManager
         resources: AudioPlayerResources
     ) {
         val executor = createExecutorForTrack(track, configuration, resources)
-        track.assignExecutor(executor, true)
-
         launch(trackPlaybackDispatcher) {
+            track.assignExecutor(executor, true)
             executor.execute(listener)
         }
     }

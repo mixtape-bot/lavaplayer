@@ -21,10 +21,7 @@ class PrimordialAudioTrackExecutor(private val trackInfo: AudioTrackInfo) : Audi
 
     @Volatile
     override var position: Long = 0
-        set(value) {
-            field = value
-            markerTracker.checkSeekTimecode(value)
-        }
+        private set
 
     override val audioBuffer: AudioFrameBuffer?
         get() = null
@@ -32,27 +29,32 @@ class PrimordialAudioTrackExecutor(private val trackInfo: AudioTrackInfo) : Audi
     override val state: AudioTrackState
         get() = AudioTrackState.INACTIVE
 
-    override fun setMarker(marker: TrackMarker?) {
-        markerTracker[marker] = position
+    override suspend fun setMarker(marker: TrackMarker?) {
+        markerTracker.set(marker, position)
+    }
+
+    override suspend fun updatePosition(timecode: Long) {
+        position = timecode
+        markerTracker.checkSeekTimecode(timecode)
     }
 
     override suspend fun execute(listener: TrackStateListener) = throw UnsupportedOperationException()
     override fun failedBeforeLoad(): Boolean = false
-    override fun stop() = log.info("Tried to stop track ${trackInfo.identifier} which is not playing.")
+    override suspend fun stop() = log.info("Tried to stop track ${trackInfo.identifier} which is not playing.")
 
-    override fun provide(): AudioFrame? = provide(0, TimeUnit.MILLISECONDS)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? = null
-    override fun provide(targetFrame: MutableAudioFrame): Boolean = false
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean = false
+    override suspend fun provide(): AudioFrame? = provide(0, TimeUnit.MILLISECONDS)
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? = null
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean = false
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean = false
 
     /**
      * Apply the position and loop state that had been set on this executor to an actual executor.
      *
      * @param executor The executor to apply the state to
      */
-    fun applyStateToExecutor(executor: AudioTrackExecutor) {
+    suspend fun applyStateToExecutor(executor: AudioTrackExecutor) {
         if (position != 0L) {
-            executor.position = position
+            executor.updatePosition(position)
         }
 
         executor.setMarker(markerTracker.remove())

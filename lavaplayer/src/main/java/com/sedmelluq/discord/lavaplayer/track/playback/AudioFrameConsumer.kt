@@ -11,7 +11,7 @@ interface AudioFrameConsumer {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(InterruptedException::class)
-    fun consume(frame: AudioFrame)
+    suspend fun consume(frame: AudioFrame)
 
     /**
      * Rebuild all caches frames

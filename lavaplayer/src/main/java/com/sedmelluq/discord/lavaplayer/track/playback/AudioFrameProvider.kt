@@ -10,7 +10,7 @@ interface AudioFrameProvider {
     /**
      * @return Provided frame, or null if none available
      */
-    fun provide(): AudioFrame?
+    suspend fun provide(): AudioFrame?
 
     /**
      * @param timeout Specifies the maximum time to wait for data. Pass 0 for non-blocking mode.
@@ -21,13 +21,13 @@ interface AudioFrameProvider {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(TimeoutException::class, InterruptedException::class)
-    fun provide(timeout: Long, unit: TimeUnit): AudioFrame?
+    suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame?
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.
      * @return `true` if a frame was provided.
      */
-    fun provide(targetFrame: MutableAudioFrame): Boolean
+    suspend fun provide(targetFrame: MutableAudioFrame): Boolean
 
     /**
      * @param targetFrame Frame to update with the details and data of the provided frame.
@@ -38,5 +38,5 @@ interface AudioFrameProvider {
      * @throws InterruptedException When interrupted externally (or for seek/stop).
      */
     @Throws(TimeoutException::class, InterruptedException::class)
-    fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean
+    suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean
 }

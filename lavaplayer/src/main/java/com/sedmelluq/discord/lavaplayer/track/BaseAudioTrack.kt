@@ -44,11 +44,8 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
     override val isSeekable: Boolean
         get() = !info.isStream
 
-    override var position: Long
+    override val position: Long
         get() = activeExecutor.position
-        set(position) {
-            activeExecutor.position = position
-        }
 
     override val duration: Long
         get() {
@@ -56,7 +53,7 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
             return if (accurate == 0L) info.length else accurate
         }
 
-    override fun assignExecutor(executor: AudioTrackExecutor, applyPrimordialState: Boolean) {
+    override suspend fun assignExecutor(executor: AudioTrackExecutor, applyPrimordialState: Boolean) {
         _activeExecutor = if (!executorAssigned) {
             executorAssigned = true
             if (applyPrimordialState) {
@@ -71,9 +68,11 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
 
     override fun createLocalExecutor(playerManager: AudioPlayerManager?): AudioTrackExecutor? = null
 
-    override fun stop() = activeExecutor.stop()
+    override suspend fun updatePosition(timecode: Long) = activeExecutor.updatePosition(timecode)
 
-    override fun setMarker(marker: TrackMarker?) = activeExecutor.setMarker(marker)
+    override suspend fun stop() = activeExecutor.stop()
+
+    override suspend fun setMarker(marker: TrackMarker?) = activeExecutor.setMarker(marker)
 
     override fun makeClone(): AudioTrack? = makeShallowClone().also { it.userData = userData }
 
@@ -86,15 +85,15 @@ abstract class BaseAudioTrack(final override val info: AudioTrackInfo) : Interna
     }
 
     /* audio frame provider */
-    override fun provide(): AudioFrame? = activeExecutor.provide()
+    override suspend fun provide(): AudioFrame? = activeExecutor.provide()
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? = activeExecutor.provide(timeout, unit)
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? = activeExecutor.provide(timeout, unit)
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean = activeExecutor.provide(targetFrame)
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean = activeExecutor.provide(targetFrame)
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean =
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean =
         activeExecutor.provide(targetFrame, timeout, unit)
 
     /* kotlin */

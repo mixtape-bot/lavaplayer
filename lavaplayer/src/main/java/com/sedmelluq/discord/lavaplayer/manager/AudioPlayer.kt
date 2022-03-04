@@ -34,19 +34,19 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
     /**
      * @param track The track to start playing
      */
-    fun playTrack(track: AudioTrack?)
+    suspend fun playTrack(track: AudioTrack?)
 
     /**
      * @param track       The track to start playing, passing null will stop the current track and return false
      * @param noInterrupt Whether to only start if nothing else is playing
      * @return True if the track was started
      */
-    fun startTrack(track: AudioTrack?, noInterrupt: Boolean): Boolean
+    suspend fun startTrack(track: AudioTrack?, noInterrupt: Boolean): Boolean
 
     /**
      * Stop currently playing track.
      */
-    fun stopTrack()
+    suspend fun stopTrack()
 
     /**
      * Configures the filter factory for this player.
@@ -61,12 +61,12 @@ interface AudioPlayer : AudioFrameProvider, CoroutineScope {
     /**
      * Destroy the player and stop playing track.
      */
-    fun destroy()
+    suspend fun destroy()
 
     /**
      * Check if the player should be "cleaned up" - stopped due to nothing using it, with the given threshold.
      *
      * @param threshold Threshold in milliseconds to use
      */
-    fun checkCleanup(threshold: Long)
+    suspend fun checkCleanup(threshold: Long)
 }

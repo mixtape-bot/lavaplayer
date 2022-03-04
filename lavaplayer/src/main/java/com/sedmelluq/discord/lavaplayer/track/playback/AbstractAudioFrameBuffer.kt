@@ -2,6 +2,8 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.tools.extensions.wait
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Common parts of a frame buffer which are not likely to depend on the specific implementation.
@@ -9,6 +11,9 @@ import com.sedmelluq.discord.lavaplayer.tools.extensions.wait
 abstract class AbstractAudioFrameBuffer protected constructor(protected val format: AudioDataFormat) : AudioFrameBuffer {
     @JvmField
     protected val synchronizer: Any = Any()
+    
+    @JvmField
+    protected val lock = Mutex()
 
     @JvmField
     @Volatile
@@ -28,16 +33,17 @@ abstract class AbstractAudioFrameBuffer protected constructor(protected val form
     protected var clearOnInsert: Boolean = false
 
     @Throws(InterruptedException::class)
-    override fun waitForTermination() {
-        synchronized(synchronizer) {
+    override suspend fun waitForTermination() {
+        lock.withLock {
             while (!terminated) {
-                synchronizer.wait()
+                // TODO: make sure this has the same result as Object#wait()?
+                Thread.sleep(0L)
             }
         }
     }
 
-    override fun setTerminateOnEmpty() {
-        synchronized(synchronizer) {
+    override suspend fun setTerminateOnEmpty() {
+        lock.withLock {
             if (clearOnInsert) {
                 clear()
                 clearOnInsert = false
@@ -50,8 +56,8 @@ abstract class AbstractAudioFrameBuffer protected constructor(protected val form
         }
     }
 
-    override fun setClearOnInsert() {
-        synchronized(synchronizer) {
+    override suspend fun setClearOnInsert() {
+        lock.withLock {
             clearOnInsert = true
             terminateOnEmpty = false
         }
@@ -64,5 +70,5 @@ abstract class AbstractAudioFrameBuffer protected constructor(protected val form
     override fun hasClearOnInsert(): Boolean = clearOnInsert
     override fun hasReceivedFrames(): Boolean = receivedFrames
 
-    protected abstract fun signalWaiters()
+    protected abstract suspend fun signalWaiters()
 }

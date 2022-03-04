@@ -7,7 +7,7 @@ fun interface TrackMarkerHandler {
     /**
      * @param state The state of the marker when it is triggered.
      */
-    fun handle(state: MarkerState)
+    suspend fun handle(state: MarkerState)
 
     /**
      * The state of the marker at the moment the handle method is called.

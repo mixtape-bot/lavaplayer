@@ -3,6 +3,8 @@ package com.sedmelluq.discord.lavaplayer.track.playback
 import com.sedmelluq.discord.lavaplayer.format.AudioDataFormat
 import com.sedmelluq.discord.lavaplayer.tools.extensions.notifyAll
 import com.sedmelluq.discord.lavaplayer.tools.extensions.wait
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
@@ -58,11 +60,12 @@ class NonAllocatingAudioFrameBuffer(
     /**
      * Number of frames that can be added to the buffer without blocking.
      */
+    @get:Synchronized
     override val remainingCapacity: Int
-        get() {
-            synchronized(synchronizer) {
+        get() = runBlocking {
+            lock.withLock {
                 if (frameCount == 0) {
-                    return fullCapacity
+                    return@runBlocking fullCapacity
                 }
 
                 val lastFrame = wrappedFrameIndex(firstFrame + frameCount - 1)
@@ -70,7 +73,7 @@ class NonAllocatingAudioFrameBuffer(
                 val bufferTail = frames[lastFrame].frameEndOffset
                 val maximumFrameSize = format.maximumChunkSize
 
-                return if (bufferHead < bufferTail) {
+                return@runBlocking if (bufferHead < bufferTail) {
                     (frameBuffer.size - bufferTail) / maximumFrameSize + bufferHead / maximumFrameSize
                 } else {
                     (bufferHead - bufferTail) / maximumFrameSize
@@ -79,7 +82,7 @@ class NonAllocatingAudioFrameBuffer(
         }
 
     @Throws(InterruptedException::class)
-    override fun consume(frame: AudioFrame) {
+    override suspend fun consume(frame: AudioFrame) {
         // If an interrupt sent along with setting the stopping status was silently consumed elsewhere, this check should
         // still trigger. Guarantees that stopped tracks cannot get stuck in this method. Possible performance improvement:
         // offer with timeout, check stopping if timed out, then put?
@@ -87,7 +90,7 @@ class NonAllocatingAudioFrameBuffer(
             throw InterruptedException()
         }
 
-        synchronized(synchronizer) {
+        lock.withLock {
             if (!locked) {
                 receivedFrames = true
                 if (clearOnInsert) {
@@ -104,21 +107,21 @@ class NonAllocatingAudioFrameBuffer(
         }
     }
 
-    override fun provide(): AudioFrame? {
-        synchronized(synchronizer) {
+    override suspend fun provide(): AudioFrame? {
+        lock.withLock {
             return if (provide(getBridgeFrame())) unwrapBridgeFrame() else null
         }
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
-        synchronized(synchronizer) {
+    override suspend fun provide(timeout: Long, unit: TimeUnit): AudioFrame? {
+        lock.withLock {
             return if (provide(getBridgeFrame(), timeout, unit)) unwrapBridgeFrame() else null
         }
     }
 
-    override fun provide(targetFrame: MutableAudioFrame): Boolean {
-        synchronized(synchronizer) {
+    override suspend fun provide(targetFrame: MutableAudioFrame): Boolean {
+        lock.withLock {
             return if (frameCount == 0) {
                 if (terminateOnEmpty) {
                     popPendingTerminator(targetFrame)
@@ -135,10 +138,10 @@ class NonAllocatingAudioFrameBuffer(
     }
 
     @Throws(TimeoutException::class, InterruptedException::class)
-    override fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
+    override suspend fun provide(targetFrame: MutableAudioFrame, timeout: Long, unit: TimeUnit): Boolean {
         var currentTime = System.nanoTime()
         val endTime = currentTime + unit.toMillis(timeout)
-        synchronized(synchronizer) {
+        lock.withLock {
             while (frameCount == 0) {
                 if (terminateOnEmpty) {
                     popPendingTerminator(targetFrame)
@@ -179,8 +182,8 @@ class NonAllocatingAudioFrameBuffer(
         frame.isTerminator = true
     }
 
-    override fun clear() {
-        synchronized(synchronizer) { frameCount = 0 }
+    override suspend fun clear() {
+        lock.withLock { frameCount = 0 }
     }
 
     override fun rebuild(rebuilder: AudioFrameRebuilder) {
@@ -188,14 +191,14 @@ class NonAllocatingAudioFrameBuffer(
     }
 
     override val lastInputTimecode: Long?
-        get() {
-            synchronized(synchronizer) {
+        get() = runBlocking {
+            lock.withLock {
                 if (!clearOnInsert && frameCount > 0) {
-                    return frames[wrappedFrameIndex(firstFrame + frameCount - 1)].timecode
+                    return@runBlocking frames[wrappedFrameIndex(firstFrame + frameCount - 1)].timecode
                 }
             }
 
-            return null
+            return@runBlocking null
         }
 
     private fun attemptStore(frame: AudioFrame): Boolean {
@@ -270,7 +273,8 @@ class NonAllocatingAudioFrameBuffer(
         }
     }
 
-    override fun signalWaiters() {
-        synchronized(synchronizer) { synchronizer.notifyAll() }
+    override suspend fun signalWaiters() {
+        // TODO: no fucking idea what to replace `synchronizer.notifyAll` with
+        lock.withLock { lock.unlock() }
     }
 }
